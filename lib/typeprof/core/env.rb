@@ -56,7 +56,6 @@ module TypeProf::Core
     def gen_ary_type0(elem_vtx, shape)
       ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
       ty.shape = shape
-      puts "gen_ary_type"
       ty
     end
 
