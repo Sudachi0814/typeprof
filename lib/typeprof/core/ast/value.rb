@@ -234,8 +234,8 @@ module TypeProf::Core
     class ArrayNode < Node
       def initialize(raw_node, lenv, elems = raw_node.elements)
         super(raw_node, lenv)
-        @elems = elems.map {|n| AST.create_node(n, lenv) }
-        @splat = @elems.any? {|e| e.is_a?(SplatNode) }
+        @elems = elems.map {|n| AST.create_node(n, lenv) } # raw_nodeのelementsに対しcreate_nodeをmapしたものが入る
+        @splat = @elems.any? {|e| e.is_a?(SplatNode) } # splat演算子があるかどうか
       end
 
       attr_reader :elems, :splat
@@ -243,13 +243,14 @@ module TypeProf::Core
       def subnodes = { elems: }
       def attrs = { splat: }
 
+      # installはグローバル環境を受け取り、DFグラフのノードを初期化する
       def install0(genv)
         elems = @elems.map {|e| e.install(genv).new_vertex(genv, self) }
-        unified_elem = Vertex.new(self)
+        unified_elem = Vertex.new(self) #elsemsを統一するVertex?空のVertexみたいなかんじ？
         elems.each {|vtx| @changes.add_edge(genv, vtx, unified_elem) }
-        base_ty = genv.gen_ary_type(unified_elem)
+        base_ty = genv.gen_ary_type0(unified_elem, elems.size) #instanceTypeを作って型を初期化してる（型をあわわすインスタンスを作る）
         if @splat
-          Source.new(base_ty)
+          Source.new(base_ty) #base_tyをもとにフローグラフのノードを作る
         else
           Source.new(Type::Array.new(genv, elems, base_ty))
         end

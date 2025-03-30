@@ -23,6 +23,7 @@ module TypeProf::Core
       true
     end
 
+    # ty proc callのレシーバの型
     def proc_call(changes, node, ty, a_args, ret)
       case ty
       when Type::Proc
@@ -127,6 +128,32 @@ module TypeProf::Core
       end
     end
 
+    # 返り値のノードを作る
+    # 作ったNodeを返り値のNode（ret）に繋げる（Shapeはty.shapeと等しい）
+    # Block.acceptを呼び出す(Blockに対応するグラフを作る？)（おそらく従来の処理に対応）
+    # issue: a_args.blockにはVertexが入っている（BlockをVertexで包んでいる？）
+    # 配列の要素の型、サイズを取り出して
+    # retに直接返すのだと、Blockの返り値がcollectの返り血になってしまうので、新しいVertexを作って
+    # 再実行のため、add_method_call_box再実装
+    def array_collect(changes, node, ty, a_args, ret)
+      if ty.is_a?(Type::Array) && a_args.block
+        new_vertex = Vertex.new(node)
+        a_args.block.each_type do | block_type |
+          # p block_type
+          if (block_type.is_a?(Type::Proc))
+            block_type.block.accept_args(@genv, changes, [ty.get_elem(@genv)], new_vertex, false)
+          end
+        end
+        base_ty = @genv.gen_ary_type0(new_vertex, ty.shape)
+        ret_vertex = Source.new(base_ty)
+        changes.add_edge(@genv, ret_vertex, ret)
+        true
+      else
+        # TODO: tyがInstance型の場合
+        false
+      end
+    end
+
     def deploy
       {
         class_new: [[:Class], false, :new],
@@ -135,6 +162,7 @@ module TypeProf::Core
         array_aref: [[:Array], false, :[]],
         array_aset: [[:Array], false, :[]=],
         array_push: [[:Array], false, :<<],
+        array_collect:   [[:Array], false, :collect],
         hash_aref: [[:Hash], false, :[]],
         hash_aset: [[:Hash], false, :[]=],
       }.each do |key, (cpath, singleton, mid)|

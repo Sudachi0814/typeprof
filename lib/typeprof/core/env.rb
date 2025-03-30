@@ -49,7 +49,15 @@ module TypeProf::Core
     attr_reader :proc_type, :symbol_type, :set_type, :regexp_type
 
     def gen_ary_type(elem_vtx)
-      Type::Instance.new(self, @mod_ary, [elem_vtx])
+      ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
+      ty
+    end
+
+    def gen_ary_type0(elem_vtx, shape)
+      ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
+      ty.shape = shape
+      puts "gen_ary_type"
+      ty
     end
 
     def gen_hash_type(key_vtx, val_vtx)
@@ -166,6 +174,7 @@ module TypeProf::Core
       end
     end
 
+    # 全てのグラフに型を流す
     def run_all
       run_count = 0
       until @run_queue.empty?

@@ -293,6 +293,8 @@ module TypeProf::Core
       end
     end
 
+    # ホバーした時の表示？
+    # ここでメソッド呼び出し時の表示形式がある。メソッド名とか
     def hover(path, pos)
       @rb_text_nodes[path]&.retrieve_at(pos) do |node|
         node.boxes(:mcall) do |box|
@@ -309,12 +311,12 @@ module TypeProf::Core
               if me
                 if !me.decls.empty?
                   me.decls.each do |mdecl|
-                    return "#{ orig_ty.show }##{ mid } : #{ mdecl.show }"
+                    return "#{ orig_ty.show }#decl#{ mid } : #{ mdecl.show }" 
                   end
                 end
                 if !me.defs.empty?
                   me.defs.each do |mdef|
-                    return "#{ orig_ty.show }##{ mid } : #{ mdef.show(@options[:output_parameter_names]) }"
+                    return "#{ orig_ty.show }#def#{ mid } : #{ mdef.show(@options[:output_parameter_names]) }"
                   end
                 end
               end

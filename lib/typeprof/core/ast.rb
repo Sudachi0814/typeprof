@@ -19,6 +19,7 @@ module TypeProf::Core
     end
 
     #: (untyped, TypeProf::Core::LocalEnv, ?bool) -> TypeProf::Core::AST::Node
+    # prismの解析結果（raw_nodeの種類で場合わけして、Typeprof内のASTノードを生成）
     def self.create_node(raw_node, lenv, use_result = true)
       while true
         case raw_node.type

@@ -270,6 +270,7 @@ module TypeProf::LSP
     end
   end
 
+  # 表示形式の大元
   class Message::TextDocument::CodeLens < Message
     METHOD = "textDocument/codeLens"
     def run
