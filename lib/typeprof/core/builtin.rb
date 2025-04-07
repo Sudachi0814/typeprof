@@ -135,13 +135,15 @@ module TypeProf::Core
     # 配列の要素の型、サイズを取り出して
     # retに直接返すのだと、Blockの返り値がcollectの返り血になってしまうので、新しいVertexを作って
     # 再実行のため、add_method_call_box再実装
+    # TODO: 最新版をとってくる
     def array_collect(changes, node, ty, a_args, ret)
       if ty.is_a?(Type::Array) && a_args.block
         if ty.elems.nil? || ty.elems.empty?
           puts "check"
+          pp node
           return true
         end
-        puts ty.show
+        # puts ty.show
         new_vertex = Vertex.new(node)
         a_args.block.each_type do | block_type |
           if (block_type.is_a?(Type::Proc))

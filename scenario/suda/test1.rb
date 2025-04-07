@@ -1,6 +1,6 @@
 ## update: test.rb
 
-# できそう？
+# できそう　aの型の推論は？
 def matmul(a)
   b = [[0, 1], [2, 3]]
   result = Array.new(2) { Array.new(2, 0) }
@@ -24,12 +24,19 @@ def mymap1(array)
   result
 end
 
-# 難しそう
+def create_array(elem, n)
+  result = [elem] * n
+  result
+end
+
+# 難しい（pushがむずかしいだけ）
 def mymap2(array)
   result = [] 
   array.each do |element|
-    result << yield(element)  
+    result << yield(element) 
   end
   result
 end
+
+# 次元レベルでの解析
 
