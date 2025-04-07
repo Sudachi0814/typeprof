@@ -66,7 +66,7 @@ module TypeProf::Core
       def install0(genv) = Source.new(genv.int_type)
     end
 
-    class SIntgerNode < LiteralNode
+    class SIntegerNode < LiteralNode
       def initialize(raw_node, lenv, lit = raw_node.slice)
         super(raw_node, lenv, Integer(lit))
       end
