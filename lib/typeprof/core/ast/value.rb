@@ -63,6 +63,7 @@ module TypeProf::Core
         super(raw_node, lenv, Integer(lit))
       end
 
+      #TODO:
       def install0(genv) = Source.new(genv.int_type)
     end
 

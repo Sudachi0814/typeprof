@@ -158,6 +158,7 @@ module TypeProf::Core
         raise "unknown class: #{ origin.class }"
       end
       @next_vtxs = Set[]
+      @origin = origin
       super({})
     end
 
@@ -222,7 +223,8 @@ module TypeProf::Core
     $new_id = 0 # TODO: Use class variable
 
     def to_s
-      "v#{ @id ||= $new_id += 1 }"
+      id = "v#{ @id ||= $new_id += 1 }"
+      "v#{id}:"
     end
 
     alias inspect to_s

@@ -73,6 +73,55 @@ module TypeProf::Core
       end
     end
 
+    module TypeProf::Core
+      class Type
+        class NumericSingleton < Type
+          #: (GlobalEnv, Integer | Float) -> void
+          def initialize(genv, value)
+            raise unless value.is_a?(Numeric)
+            @value = value
+          end
+    
+          attr_reader :value
+    
+          def base_type(genv)
+            case @value
+            when Integer
+              genv.int_type
+            when Float
+              genv.float_type
+            when Rational
+              genv.rational_type
+            when Complex
+              genv.complex_type
+            else
+              raise
+            end
+          end
+          
+          def check_match(genv, changes, vtx)
+            vtx.each_type do |other_ty|
+              case other_ty
+              when NumericSingleton
+                return true if @value == other_ty.value
+              when Instance
+                ty = self
+                base = ty.base_type(genv)
+                
+                return true if base.check_match(genv, changes, Source.new(other_ty)) # vtxでいい？
+              end
+            end
+            false
+          end
+    
+          def show
+            @value.inspect
+          end
+        end
+      end
+    end
+    
+
     class Instance < Type
       #: (GlobalEnv, ModuleEntity, ::Array[Vertex]) -> void
       def initialize(genv, mod, args)

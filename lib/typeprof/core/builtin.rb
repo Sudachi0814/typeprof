@@ -137,9 +137,13 @@ module TypeProf::Core
     # 再実行のため、add_method_call_box再実装
     def array_collect(changes, node, ty, a_args, ret)
       if ty.is_a?(Type::Array) && a_args.block
+        if ty.elems.nil? || ty.elems.empty?
+          puts "check"
+          return true
+        end
+        puts ty.show
         new_vertex = Vertex.new(node)
         a_args.block.each_type do | block_type |
-          # p block_type
           if (block_type.is_a?(Type::Proc))
             block_type.block.accept_args(@genv, changes, [ty.get_elem(@genv)], new_vertex, false)
           end
@@ -148,14 +152,28 @@ module TypeProf::Core
         ret_vertex = Source.new(base_ty)
         changes.add_edge(@genv, ret_vertex, ret)
         true
+
+      elsif ty.is_a?(Type::Instance) && a_args.block && ty.mod.cpath == [:Array]
+        new_vertex = Vertex.new(node)
+        # puts ty.args
+        # puts ty.show
+        a_args.block.each_type do | block_type |
+          if (block_type.is_a?(Type::Proc))
+            block_type.block.accept_args(@genv, changes, ty.args, new_vertex, false)
+          end
+        end
+        base_ty = @genv.gen_ary_type0(new_vertex, ty.shape)
+        ret_vertex = Source.new(base_ty)
+        changes.add_edge(@genv, ret_vertex, ret)
+        true
       else
-        # TODO: tyがInstance型の場合
         false
       end
     end
 
     def deploy
       {
+        #TODO:Array.newはクラスメソッド
         class_new: [[:Class], false, :new],
         object_class: [[:Object], false, :class],
         proc_call: [[:Proc], false, :call],

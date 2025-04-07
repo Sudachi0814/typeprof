@@ -2,7 +2,7 @@ lst = [1, 2, 3, 'Hello']
 new_lst = lst.map { |x| x }
 # new_lst = lst.map { |x| x.is_a?(Numeric) ? x * 2 : x }
 p new_lst
-y = 10 * 2
+y = 10 * 2 #*はメソッド　ビルドインでできる
 lst = Array.new(y) # Array Any Size(x)
 lst1 = Array.new(10) # Array Any Size(n*10)
 lst1.zip(lst) # zip: 
