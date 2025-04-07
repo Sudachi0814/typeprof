@@ -63,8 +63,15 @@ module TypeProf::Core
         super(raw_node, lenv, Integer(lit))
       end
 
-      #TODO:
       def install0(genv) = Source.new(genv.int_type)
+    end
+
+    class SIntgerNode < LiteralNode
+      def initialize(raw_node, lenv, lit = raw_node.slice)
+        super(raw_node, lenv, Integer(lit))
+      end
+
+      def install0(genv) = Source.new(Type::NumericSingleton.new(genv, @lit))
     end
 
     class FloatNode < LiteralNode
