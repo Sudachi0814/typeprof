@@ -16,13 +16,15 @@ def matmul(a)
 end
 
 # 呼び出し元のコンテキストがなかったらどうする（symbolicな解析？）
-def mymap1(array)
-  result = Array.new(array.size)  
+#: (Array[Integer, n:Integer]) -> Array[Integer] size=3|4
+def mymap1(array) # Array[n] -> Array[n]
+  result = Array.new(array.size)
   array.each_with_index do |element, i|
     result[i] = yield(element)
   end
   result
 end
+# array = [1,2,3]
 
 def create_array(elem, n)
   result = [elem] * n
