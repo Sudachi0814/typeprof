@@ -112,7 +112,7 @@ module TypeProf::Core
       ty_env = base_ty_env.dup
       if base_ty.is_a?(Type::Instance)
         base_ty.mod.type_params.zip(base_ty.args) do |param, arg|
-          ty_env[param] = arg
+          ty_env[param] = arg || Source.new
         end
       end
       args = mod.type_params.zip(type_args).map do |param, arg|
@@ -285,9 +285,10 @@ module TypeProf::Core
       @break_vtx = nil
       @next_boxes = []
       @filters = {}
+      @strict_const_scope = false
     end
 
-    attr_reader :path, :cref, :locals, :return_boxes, :break_vtx, :next_boxes
+    attr_reader :path, :cref, :locals, :return_boxes, :break_vtx, :next_boxes, :strict_const_scope
 
     def new_var(name, node)
       @locals[name] = Vertex.new(node)
@@ -334,6 +335,13 @@ module TypeProf::Core
         end
       end
       vtx
+    end
+
+    def use_strict_const_scope
+      @strict_const_scope = true
+      yield
+    ensure
+      @strict_const_scope = false
     end
   end
 

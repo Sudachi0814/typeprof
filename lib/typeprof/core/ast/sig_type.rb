@@ -236,13 +236,13 @@ module TypeProf::Core
 
         static_reads = []
         if @cpath.empty?
-          static_reads << BaseTypeAliasRead.new(genv, @name, @toplevel ? CRef::Toplevel : @lenv.cref)
+          static_reads << BaseTypeAliasRead.new(genv, @name, @toplevel ? CRef::Toplevel : @lenv.cref, false)
         else
-          static_reads << BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref)
+          static_reads << BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
           @cpath[1..].each do |cname|
-            static_reads << ScopedConstRead.new(cname, static_reads.last)
+            static_reads << ScopedConstRead.new(cname, static_reads.last, false)
           end
-          static_reads << ScopedTypeAliasRead.new(@name, static_reads.last)
+          static_reads << ScopedTypeAliasRead.new(@name, static_reads.last, false)
         end
         static_reads
       end
@@ -343,11 +343,11 @@ module TypeProf::Core
 
       def define0(genv)
         const_reads = []
-        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref)
+        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
         const_reads << const_read
         unless @cpath.empty?
           @cpath[1..].each do |cname|
-            const_read = ScopedConstRead.new(cname, const_read)
+            const_read = ScopedConstRead.new(cname, const_read, false)
             const_reads << const_read
           end
         end
@@ -403,11 +403,11 @@ module TypeProf::Core
       def define0(genv)
         @args.each {|arg| arg.define(genv) }
         const_reads = []
-        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref)
+        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
         const_reads << const_read
         unless @cpath.empty?
           @cpath[1..].each do |cname|
-            const_read = ScopedConstRead.new(cname, const_read)
+            const_read = ScopedConstRead.new(cname, const_read, false)
             const_reads << const_read
           end
         end
@@ -435,7 +435,11 @@ module TypeProf::Core
         cpath = @static_ret.last.cpath
         return unless cpath
         mod = genv.resolve_cpath(cpath)
-        args = @args.map {|arg| arg.contravariant_vertex(genv, changes, subst) }
+        # TODO: report error for wrong type arguments
+        # TODO: support default type args
+        args = mod.type_params.zip(@args).map do |_, arg|
+          arg ? arg.contravariant_vertex(genv, changes, subst) : Source.new
+        end
         changes.add_edge(genv, Source.new(Type::Instance.new(genv, mod, args)), vtx)
       end
 
@@ -615,11 +619,11 @@ module TypeProf::Core
       def define0(genv)
         @args.each {|arg| arg.define(genv) }
         const_reads = []
-        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref)
+        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
         const_reads << const_read
         unless @cpath.empty?
           @cpath[1..].each do |cname|
-            const_read = ScopedConstRead.new(cname, const_read)
+            const_read = ScopedConstRead.new(cname, const_read, false)
             const_reads << const_read
           end
         end

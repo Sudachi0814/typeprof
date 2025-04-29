@@ -41,6 +41,9 @@ module TypeProf::Core
       Dir.glob(File.expand_path(rb_folder + "/**/*.{rb,rbs}")) do |path|
         update_file(path, nil)
       end
+      Dir.glob(File.expand_path(rbs_folder + "/**/*.{rb,rbs}")) do |path|
+        update_file(path, nil)
+      end
     end
 
     def update_file(path, code)
@@ -161,6 +164,18 @@ module TypeProf::Core
           boxes.each do |box|
             box.resolve(genv, nil) do |me, _ty, mid, _orig_ty|
               next unless me
+              me.decls.each do |mdecl|
+                next unless mdecl.node.lenv.path
+
+                code_range =
+                  if mdecl.node.respond_to?(:mname_code_range)
+                    mdecl.node.mname_code_range(mid)
+                  else
+                    mdecl.node.code_range
+                  end
+
+                defs << [mdecl.node.lenv.path, code_range]
+              end
               me.defs.each do |mdef|
                 code_range =
                   if mdef.node.respond_to?(:mname_code_range)
@@ -254,6 +269,13 @@ module TypeProf::Core
         node.boxes(:cread) do |box|
           if box.node.cname_code_range.include?(pos)
             box.const_read.cdef.defs.each do |cdef|
+              cdefs << cdef
+            end
+          end
+        end
+        if node.is_a?(AST::ConstantWriteNode)
+          if node.cname_code_range.include?(pos) && node.static_cpath
+            genv.resolve_const(node.static_cpath).defs.each do |cdef|
               cdefs << cdef
             end
           end

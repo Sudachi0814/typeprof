@@ -52,8 +52,8 @@ module TypeProf::Core
       end
 
       def install0(genv)
-        @mod_val = Source.new(Type::Singleton.new(genv, genv.resolve_cpath(@cpath)))
-        @changes.add_edge(genv, @mod_val, @static_ret[:module].vtx)
+        mod_val = Source.new(Type::Singleton.new(genv, genv.resolve_cpath(@cpath)))
+        @changes.add_edge(genv, mod_val, @static_ret[:module].vtx)
         @members.each do |member|
           member.install(genv)
         end
@@ -89,10 +89,10 @@ module TypeProf::Core
         static_ret[:self_types] = self_types = []
         @self_types.zip(@self_type_args) do |(cpath, toplevel), args|
           args.each {|arg| arg.define(genv) }
-          const_read = BaseConstRead.new(genv, cpath.first, toplevel ? CRef::Toplevel : @lenv.cref)
+          const_read = BaseConstRead.new(genv, cpath.first, toplevel ? CRef::Toplevel : @lenv.cref, false)
           const_reads = [const_read]
           cpath[1..].each do |cname|
-            const_read = ScopedConstRead.new(cname, const_read)
+            const_read = ScopedConstRead.new(cname, const_read, false)
             const_reads << const_read
           end
           mod = genv.resolve_cpath(@cpath)
@@ -150,10 +150,10 @@ module TypeProf::Core
         const_reads = []
         if @superclass_cpath
           @superclass_args.each {|arg| arg.define(genv) }
-          const_read = BaseConstRead.new(genv, @superclass_cpath.first, @superclass_toplevel ? CRef::Toplevel : @lenv.cref)
+          const_read = BaseConstRead.new(genv, @superclass_cpath.first, @superclass_toplevel ? CRef::Toplevel : @lenv.cref, false)
           const_reads << const_read
           @superclass_cpath[1..].each do |cname|
-            const_read = ScopedConstRead.new(cname, const_read)
+            const_read = ScopedConstRead.new(cname, const_read, false)
             const_reads << const_read
           end
           mod = genv.resolve_cpath(@cpath)
@@ -180,6 +180,7 @@ module TypeProf::Core
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         @mid = raw_decl.name
+        @mid_code_range = TypeProf::CodeRange.from_node(raw_decl.location[:name])
         @singleton = raw_decl.singleton?
         @instance = raw_decl.instance?
         @method_types = raw_decl.overloads.map do |overload|
@@ -189,10 +190,12 @@ module TypeProf::Core
         @overloading = raw_decl.overloading
       end
 
-      attr_reader :mid, :singleton, :instance, :method_types, :overloading
+      attr_reader :mid, :singleton, :instance, :method_types, :overloading, :mid_code_range
 
       def subnodes = { method_types: }
-      def attrs = { mid:, singleton:, instance:, overloading: }
+      def attrs = { mid:, mid_code_range:, singleton:, instance:, overloading: }
+
+      def mname_code_range(_name) = @mid_code_range
 
       def install0(genv)
         [[@singleton, true], [@instance, false]].each do |enabled, singleton|
@@ -219,10 +222,10 @@ module TypeProf::Core
       def define0(genv)
         @args.each {|arg| arg.define(genv) }
         const_reads = []
-        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref)
+        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
         const_reads << const_read
         @cpath[1..].each do |cname|
-          const_read = ScopedConstRead.new(cname, const_read)
+          const_read = ScopedConstRead.new(cname, const_read, false)
           const_reads << const_read
         end
         mod = genv.resolve_cpath(@lenv.cref.cpath)
