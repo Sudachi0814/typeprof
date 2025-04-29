@@ -567,7 +567,7 @@ module TypeProf::Core
         when ::TrueClass then genv.true_type
         when ::FalseClass then genv.false_type
         else
-          raise "unknown RBS literal: #{ @lit.inspect }"
+          raise "unknown RBS literal: #{ @lit.inspect }" # TODO: @lit リテラル　ここでシングルトン型を生成
         end
       end
 
