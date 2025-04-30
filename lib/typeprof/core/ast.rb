@@ -193,11 +193,12 @@ module TypeProf::Core
       when :true_node then TrueNode.new(raw_node, lenv)
       when :false_node then FalseNode.new(raw_node, lenv)
       when :integer_node then IntegerNode.new(raw_node, lenv)
+      # when :integer_node then SIntegerNode.new(raw_node, lenv) #
       when :float_node then FloatNode.new(raw_node, lenv)
       when :rational_node then RationalNode.new(raw_node, lenv)
       when :imaginary_node then ComplexNode.new(raw_node, lenv)
       when :source_file_node then StringNode.new(raw_node, lenv, "")
-      when :source_line_node then IntegerNode.new(raw_node, lenv, 0)
+      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) #TODO:
       when :source_encoding_node then SourceEncodingNode.new(raw_node, lenv)
       when :symbol_node then SymbolNode.new(raw_node, lenv)
       when :interpolated_symbol_node then InterpolatedSymbolNode.new(raw_node, lenv)
@@ -312,11 +313,12 @@ module TypeProf::Core
       when :true_node then TrueNode.new(raw_node, lenv)
       when :false_node then FalseNode.new(raw_node, lenv)
       when :integer_node then IntegerNode.new(raw_node, lenv)
+      # when :integer_node then SIntegerNode.new(raw_node, lenv)
       when :float_node then FloatNode.new(raw_node, lenv)
       when :rational_node then RationalNode.new(raw_node, lenv)
       when :imaginary_node then ComplexNode.new(raw_node, lenv)
       when :source_file_node then StringNode.new(raw_node, lenv, "")
-      when :source_line_node then IntegerNode.new(raw_node, lenv, 0)
+      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) #TODO:
       when :source_encoding_node then SourceEncodingNode.new(raw_node, lenv)
       when :symbol_node then SymbolNode.new(raw_node, lenv)
       when :interpolated_symbol_node then InterpolatedSymbolNode.new(raw_node, lenv)

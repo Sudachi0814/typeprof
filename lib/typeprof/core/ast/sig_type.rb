@@ -566,7 +566,7 @@ module TypeProf::Core
         case @lit
         when ::Symbol
           Type::Symbol.new(genv, @lit)
-        when ::Integer then genv.int_type
+        when ::Integer then genv.int_type # TODO: instanceの方は変えなくていい？
         when ::String then genv.str_type
         when ::TrueClass then genv.true_type
         when ::FalseClass then genv.false_type

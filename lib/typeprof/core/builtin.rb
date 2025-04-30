@@ -1,5 +1,7 @@
 module TypeProf::Core
   class Builtin
+    # TODO: Integerで条件分岐している部分全般
+    # TODO: +などの演算に対応するbuiltinでNumericSingletonの演算を実装
     def initialize(genv)
       @genv = genv
     end
