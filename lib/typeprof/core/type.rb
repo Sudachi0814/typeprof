@@ -73,16 +73,67 @@ module TypeProf::Core
       end
     end
 
+    module TypeProf::Core
+      class Type
+        class NumericSingleton < Type
+          #: (GlobalEnv, Integer | Float) -> void
+          def initialize(genv, value)
+            raise unless value.is_a?(Numeric)
+            @value = value
+          end
+    
+          attr_reader :value
+    
+          def base_type(genv)
+            case @value
+            when Integer
+              genv.int_type
+            when Float
+              genv.float_type
+            when Rational
+              genv.rational_type
+            when Complex
+              genv.complex_type
+            else
+              raise
+            end
+          end
+          
+          def check_match(genv, changes, vtx)
+            vtx.each_type do |other_ty|
+              case other_ty
+              when NumericSingleton
+                return true if @value == other_ty.value
+              when Instance
+                ty = self
+                base = ty.base_type(genv)
+                
+                return true if base.check_match(genv, changes, Source.new(other_ty)) # vtxでいい？
+              end
+            end
+            false
+          end
+    
+          def show
+            @value.inspect
+          end
+        end
+      end
+    end
+    
+
     class Instance < Type
       #: (GlobalEnv, ModuleEntity, ::Array[Vertex]) -> void
       def initialize(genv, mod, args)
         raise mod.class.to_s unless mod.is_a?(ModuleEntity)
         @mod = mod
         @args = args
+        @shape = [] # shapeを表すフィールド
         raise unless @args.is_a?(::Array)
       end
 
-      attr_reader :mod, :args
+      attr_reader :mod, :args, :shape
+      attr_accessor :shape
 
       def base_type(_)
         self
@@ -147,6 +198,7 @@ module TypeProf::Core
         when [:NilClass] then "nil"
         when [:TrueClass] then "true"
         when [:FalseClass] then "false"
+        when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
         else
           "#{ @mod.show_cpath }#{ @args.empty? ? "" : "[#{ @args.map {|arg| Type.strip_parens(arg.show) }.join(", ") }]" }"
         end
@@ -158,10 +210,11 @@ module TypeProf::Core
       def initialize(genv, elems, base_type)
         @elems = elems
         @base_type = base_type
+        @shape = elems.size
         raise unless base_type.is_a?(Instance)
       end
 
-      attr_reader :elems
+      attr_reader :elems, :shape
 
       def get_elem(genv, idx = nil)
         if idx && @elems
@@ -224,9 +277,9 @@ module TypeProf::Core
 
       def show
         if @elems
-          "[#{ @elems.map {|e| Type.strip_parens(e.show) }.join(", ") }]"
+          "[#{@elems.map { |e| Type.strip_parens(e.show) }.join(", ")}]#{@shape ? " size=#{@shape}" : ""}"
         else
-          "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }]"
+          "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }] Debug"
         end
       end
     end

@@ -280,7 +280,7 @@ module TypeProf::Core
           args << "**#{method_type.rest_keywords.show}"
         end
 
-        s = args.empty? ? "-> " : "(#{ args.join(", ") }) -> "
+        s = args.empty? ? "-> " : "(#{ args.join(",") }) -> "
         s += method_type.return_type.show
       end.join(" | ")
     end

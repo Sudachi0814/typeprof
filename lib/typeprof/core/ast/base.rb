@@ -187,7 +187,7 @@ module TypeProf::Core
       end
 
       def pretty_print_instance_variables
-        super() - [:@raw_node, :@lenv, :@prev_node, :@static_ret, :@changes]
+        super() - [:@prev_node, :@static_ret, :@changes]
       end
     end
 
