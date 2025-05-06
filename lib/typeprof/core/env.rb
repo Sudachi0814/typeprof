@@ -48,6 +48,9 @@ module TypeProf::Core
     attr_reader :int_type, :float_type, :rational_type, :complex_type
     attr_reader :proc_type, :symbol_type, :set_type, :regexp_type
 
+    def gen_integer_singleton_type()
+    end
+
     def gen_ary_type(elem_vtx)
       ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
       ty

@@ -75,7 +75,7 @@ module TypeProf::Core
 
     module TypeProf::Core
       class Type
-        class NumericSingleton < Type
+        class IntegerSingleton < Type
           #: (GlobalEnv, Integer | Float) -> void
           def initialize(genv, value)
             raise unless value.is_a?(Numeric)
@@ -102,7 +102,7 @@ module TypeProf::Core
           def check_match(genv, changes, vtx)
             vtx.each_type do |other_ty|
               case other_ty
-              when NumericSingleton
+              when IntegerSingleton
                 return true if @value == other_ty.value
               when Instance
                 ty = self
@@ -199,6 +199,8 @@ module TypeProf::Core
         when [:TrueClass] then "true"
         when [:FalseClass] then "false"
         when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
+          #suda: TODO
+        when [:Vec] then "Vector"
         else
           "#{ @mod.show_cpath }#{ @args.empty? ? "" : "[#{ @args.map {|arg| Type.strip_parens(arg.show) }.join(", ") }]" }"
         end

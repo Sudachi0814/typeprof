@@ -1,7 +1,8 @@
 source "https://rubygems.org"
 
 #if ENV["RBS_VERSION"]
-  gem "rbs", github: "Sudachi0814/rbs", ref: ENV["RBS_VERSION"]
+  gem "rbs", github: "Sudachi0814/rbs", branch: "develop"
+  # gem "rbs", "~> 3.5" 
 #else
 #  # Specify your gem's dependencies in typeprof.gemspec
 #  gemspec

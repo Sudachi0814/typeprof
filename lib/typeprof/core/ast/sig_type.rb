@@ -331,6 +331,7 @@ module TypeProf::Core
     end
 
     class SigTySingletonNode < SigTyNode
+      #suda: RBS内部表現シングルトン型に対応するノード
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         name = raw_decl.name
@@ -554,6 +555,8 @@ module TypeProf::Core
     end
 
     class SigTyLiteralNode < SigTyNode
+      #suda: .rbsのリテラルに対応するノード
+      # rbsのリテラルってなんだっけ...
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         @lit = raw_decl.literal
@@ -566,12 +569,13 @@ module TypeProf::Core
         case @lit
         when ::Symbol
           Type::Symbol.new(genv, @lit)
-        when ::Integer then genv.int_type # TODO: instanceの方は変えなくていい？
+        when ::Integer 
+          Type::IntegerSingleton.new(genv, @lit)
         when ::String then genv.str_type
         when ::TrueClass then genv.true_type
         when ::FalseClass then genv.false_type
         else
-          raise "unknown RBS literal: #{ @lit.inspect }" # TODO: @lit リテラル　ここでシングルトン型を生成
+          raise "unknown RBS literal: #{ @lit.inspect }"
         end
       end
 

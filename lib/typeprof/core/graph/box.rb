@@ -691,6 +691,8 @@ module TypeProf::Core
   end
 
   class MethodCallBox < Box
+    # suda: メソッド呼び出しBoxのディスパッチなど
+    # builtinやRBSを参照している
     def initialize(node, genv, recv, mid, a_args, subclasses)
       raise mid.to_s unless mid
       super(node)

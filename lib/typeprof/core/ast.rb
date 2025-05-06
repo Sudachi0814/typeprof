@@ -18,7 +18,6 @@ module TypeProf::Core
       ProgramNode.new(raw_scope, lenv)
     end
 
-    #: (untyped, TypeProf::Core::LocalEnv, ?bool) -> TypeProf::Core::AST::Node
     # prismの解析結果（raw_nodeの種類で場合わけして、Typeprof内のASTノードを生成）
     def self.create_node(raw_node, lenv, use_result = true)
       while true
@@ -365,6 +364,7 @@ module TypeProf::Core
 
     def self.parse_rbs(path, src)
       _buffer, _directives, raw_decls = RBS::Parser.parse_signature(src)
+      #suda:RBSのパーサーを利用
 
       cref = CRef::Toplevel
       lenv = LocalEnv.new(path, cref, {}, [])
@@ -375,6 +375,7 @@ module TypeProf::Core
     end
 
     def self.create_rbs_decl(raw_decl, lenv)
+      # suda;rbsファイルからrbsに対応したノードを作る
       case raw_decl
       when RBS::AST::Declarations::Class
         SigClassNode.new(raw_decl, lenv)
@@ -387,7 +388,6 @@ module TypeProf::Core
       when RBS::AST::Declarations::AliasDecl
       when RBS::AST::Declarations::TypeAlias
         SigTypeAliasNode.new(raw_decl, lenv)
-        # TODO: check
       when RBS::AST::Declarations::Global
         SigGlobalVariableNode.new(raw_decl, lenv)
       else
@@ -424,6 +424,8 @@ module TypeProf::Core
     end
 
     def self.create_rbs_type(raw_decl, lenv)
+      #suda: ここでrbsの型をもとにASTを生成
+      # Singleton型はどれだ
       case raw_decl
       when RBS::Types::Bases::Nil
         SigTyBaseNilNode.new(raw_decl, lenv)

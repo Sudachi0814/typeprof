@@ -6,6 +6,8 @@ module TypeProf::Core
       @genv = genv
     end
 
+    #suda: TODO: newでイニシャライズした時に型変数とマッチした値で初期化するような処理をまだやっていない。.newは返り値の型がRBSにはない！！
+
     def class_new(changes, node, ty, a_args, ret)
       if ty.is_a?(Type::Singleton)
         ty = ty.get_instance_type(@genv)
@@ -184,7 +186,7 @@ module TypeProf::Core
         array_aref: [[:Array], false, :[]],
         array_aset: [[:Array], false, :[]=],
         array_push: [[:Array], false, :<<],
-        array_collect:   [[:Array], false, :collect],
+        # array_collect:   [[:Array], false, :collect],
         hash_aref: [[:Hash], false, :[]],
         hash_aset: [[:Hash], false, :[]=],
       }.each do |key, (cpath, singleton, mid)|

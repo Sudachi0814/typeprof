@@ -1,8 +1,9 @@
 GIT
-  remote: https://github.com/ruby/rbs.git
-  revision: bcc737da3c8c625d55d9b8856d9b8399b92a32d4
+  remote: https://github.com/Sudachi0814/rbs.git
+  revision: 525126f72c26f3feec82a12068790c811ee61b7a
+  branch: develop
   specs:
-    rbs (3.5.1)
+    rbs (3.9.2)
       logger
 
 GEM
@@ -10,9 +11,9 @@ GEM
   specs:
     coverage-helpers (1.0.0)
     docile (1.4.0)
-    logger (1.6.0)
+    logger (1.7.0)
     power_assert (2.0.3)
-    prism (1.0.0)
+    prism (1.4.0)
     rake (13.2.1)
     simplecov (0.22.0)
       docile (~> 1.1)
@@ -39,4 +40,4 @@ DEPENDENCIES
   test-unit
 
 BUNDLED WITH
-   2.6.0.dev
+   2.5.18

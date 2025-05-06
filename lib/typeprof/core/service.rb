@@ -120,6 +120,7 @@ module TypeProf::Core
       code = File.read(path) unless code
       begin
         decls = AST.parse_rbs(path, code)
+        #suda: rbsファイルをASTにパースする
       rescue RBS::ParsingError
         return false
       end

@@ -63,15 +63,7 @@ module TypeProf::Core
         super(raw_node, lenv, Integer(lit))
       end
 
-      def install0(genv) = Source.new(genv.int_type)
-    end
-
-    class SIntegerNode < LiteralNode
-      def initialize(raw_node, lenv, lit = raw_node.slice)
-        super(raw_node, lenv, Integer(lit))
-      end
-
-      def install0(genv) = Source.new(Type::NumericSingleton.new(genv, @lit))
+      def install0(genv) = Source.new(Type::IntegerSingleton.new(genv, @lit))
     end
 
     class FloatNode < LiteralNode
@@ -264,6 +256,8 @@ module TypeProf::Core
         end
       end
     end
+
+    #suda: TODO: VectorNode
 
     class HashNode < Node
       def initialize(raw_node, lenv, keywords)
