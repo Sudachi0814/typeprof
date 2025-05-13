@@ -17,6 +17,7 @@ module TypeProf::Core
 
       @gvars = {}
       @mod_ary = resolve_cpath([:Array])
+      @mod_vec = resolve_cpath([:Vec])
       @mod_hash = resolve_cpath([:Hash])
       @mod_range = resolve_cpath([:Range])
       @mod_str = resolve_cpath([:String])
@@ -61,6 +62,13 @@ module TypeProf::Core
       ty.shape = shape
       ty
     end
+
+    def gen_vec_type(elem_vtx, shape)
+      ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
+      ty.shape = shape
+      ty
+    end
+
 
     def gen_hash_type(key_vtx, val_vtx)
       Type::Instance.new(self, @mod_hash, [key_vtx, val_vtx])
@@ -249,6 +257,7 @@ module TypeProf::Core
         AST.create_rbs_decl(raw_decl, lenv)
       end.compact
 
+      #suda: Vecwo
       decls += AST.parse_rbs("typeprof-rbs-shim.rbs", <<-RBS)
         class Exception
           include _Exception

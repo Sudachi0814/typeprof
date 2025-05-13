@@ -12,6 +12,8 @@ module TypeProf::Core
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         @cpath = AST.resolve_rbs_name(raw_decl.name, lenv)
+        # p "#{@cpath}" #suda: rbsにあるモジュールに対応したノード出力
+
         # TODO: decl.type_params
         # TODO: decl.super_class.args
         ncref = CRef.new(@cpath, :class, nil, lenv.cref)
@@ -123,6 +125,7 @@ module TypeProf::Core
     class SigClassNode < SigModuleBaseNode
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
+        # pp raw_decl.name
         superclass = raw_decl.super_class
         if superclass
           name = superclass.name
@@ -471,4 +474,5 @@ module TypeProf::Core
       end
     end
   end
+  
 end

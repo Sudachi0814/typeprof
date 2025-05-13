@@ -389,6 +389,7 @@ module TypeProf::Core
     end
 
     class SigTyInstanceNode < SigTyNode
+      # rbsの宣言以外の部分に対応するノード
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         name = raw_decl.name
@@ -479,7 +480,8 @@ module TypeProf::Core
           changes.add_edge(genv, nvtx, unified_elem)
           nvtx
         end
-        changes.add_edge(genv, Source.new(Type::Array.new(genv, elems, genv.gen_ary_type(unified_elem))), vtx)
+        changes.add_edge(genv, Source.new(Type::Array.new(genv, elems, genv.gen_ary_type(unified_elem))), vtx) #suda:TupleからSourceノードを作る
+        # TODO: Vec対応
       end
 
       def show
@@ -502,6 +504,15 @@ module TypeProf::Core
     end
 
     class SigTyVarNode < SigTyNode
+      #suda: 型変数ノード(ElemとかSizeとか)
+      # raw_declの中身
+      # RBS::Types::Variable
+      # ├─ @location: RBS::Location
+      # │   ├─ buffer   = "a.rbs"         # ファイル名
+      # │   ├─ start    = 2:19            # ソース上の行:列
+      # │   ├─ pos      = 52...56         # ？
+      # │   └─ children = source="Elem"   # その位置に書かれていた文字列
+      # └─ @name      = :Elem  
       def initialize(raw_decl, lenv)
         super(raw_decl, lenv)
         @var = raw_decl.name
@@ -665,6 +676,65 @@ module TypeProf::Core
           s << "[...]"
         end
         s
+      end
+    end
+
+    class SigTyPlusNode < SigTyNode
+      def initialize(raw_decl, lenv)
+        super(raw_decl, lenv)
+        name = raw_decl.name
+        if name.name == :Plus
+          p ":Plus"
+          # suda: TODO:ここで
+        end
+        @cpath = name.namespace.path + [name.name]
+        @toplevel = name.namespace.absolute? # "::Foo" or "Foo"
+        @args = raw_decl.args.map {|arg| AST.create_rbs_type(arg, lenv) }
+      end
+
+      def define0(genv)
+        @args.each {|arg| arg.define(genv) }
+        const_reads = []
+        const_read = BaseConstRead.new(genv, @cpath.first, @toplevel ? CRef::Toplevel : @lenv.cref, false)
+        const_reads << const_read
+        unless @cpath.empty?
+          @cpath[1..].each do |cname|
+            const_read = ScopedConstRead.new(cname, const_read, false)
+            const_reads << const_read
+          end
+        end
+        const_reads
+      end
+
+      def undefine0(genv)
+        @static_ret.each do |const_read|
+          const_read.destroy(genv)
+        end
+        @args.each {|arg| arg.undefine(genv) }
+      end
+
+      def covariant_vertex0(genv, changes, vtx, subst)
+        changes.add_depended_static_read(@static_ret.last)
+        cpath = @static_ret.last.cpath
+        return unless cpath
+        mod = genv.resolve_cpath(cpath)
+        args = @args.map {|arg| arg.covariant_vertex(genv, changes, subst) }
+        # suda: 要素に持つシングルトン型全てを格納（今は２個という制約はない）
+        all_types = []
+        args.each do |arg|
+          arg.each_type do |ty|
+            all_types << ty
+          end
+        end
+        puts "argsの型リスト: #{all_types.inspect}"
+        new_lit = all_types.map(&:value).sum
+        new_arg = TypeProf::Core::Type::IntegerSingleton.new(genv, new_lit)
+        p new_lit
+        changes.add_edge(genv, Source.new(Type::Instance.new(genv, mod, [new_arg])), vtx)
+      end
+
+      def contravariant_vertex0(genv, changes, vtx, subst)
+        # TODO:
       end
     end
   end

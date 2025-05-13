@@ -73,54 +73,48 @@ module TypeProf::Core
       end
     end
 
-    module TypeProf::Core
-      class Type
-        class IntegerSingleton < Type
-          #: (GlobalEnv, Integer | Float) -> void
-          def initialize(genv, value)
-            raise unless value.is_a?(Numeric)
-            @value = value
-          end
-    
-          attr_reader :value
-    
-          def base_type(genv)
-            case @value
-            when Integer
-              genv.int_type
-            when Float
-              genv.float_type
-            when Rational
-              genv.rational_type
-            when Complex
-              genv.complex_type
-            else
-              raise
-            end
-          end
-          
-          def check_match(genv, changes, vtx)
-            vtx.each_type do |other_ty|
-              case other_ty
-              when IntegerSingleton
-                return true if @value == other_ty.value
-              when Instance
-                ty = self
-                base = ty.base_type(genv)
-                
-                return true if base.check_match(genv, changes, Source.new(other_ty)) # vtxでいい？
-              end
-            end
-            false
-          end
-    
-          def show
-            @value.inspect
-          end
+    class IntegerSingleton < Type
+      def initialize(genv, value)
+        raise unless value.is_a?(Numeric)
+        @value = value
+      end
+
+       attr_reader :value
+
+      def base_type(genv)
+        case @value
+        when Integer
+          genv.int_type
+        when Float
+          genv.float_type
+        when Rational
+          genv.rational_type
+        when Complex
+          genv.complex_type
+        else
+          raise
         end
       end
-    end
     
+      def check_match(genv, changes, vtx)
+        vtx.each_type do |other_ty|
+          case other_ty
+          when IntegerSingleton
+            return true if @value == other_ty.value
+          when Instance
+            ty = self
+            base = ty.base_type(genv)
+            
+            return true if base.check_match(genv, changes, Source.new(other_ty)) # vtxでいい？
+          end
+        end
+        false
+      end
+
+      def show
+        "~#{@value.inspect}"
+      end
+    end
 
     class Instance < Type
       #: (GlobalEnv, ModuleEntity, ::Array[Vertex]) -> void
@@ -200,7 +194,7 @@ module TypeProf::Core
         when [:FalseClass] then "false"
         when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
           #suda: TODO
-        when [:Vec] then "Vector"
+        when [:Vec] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
         else
           "#{ @mod.show_cpath }#{ @args.empty? ? "" : "[#{ @args.map {|arg| Type.strip_parens(arg.show) }.join(", ") }]" }"
         end
@@ -280,6 +274,45 @@ module TypeProf::Core
       def show
         if @elems
           "[#{@elems.map { |e| Type.strip_parens(e.show) }.join(", ")}]#{@shape ? " size=#{@shape}" : ""}"
+        else
+          "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }] Debug"
+        end
+      end
+    end
+
+    class Vec < Type
+      def initialize(genv, elems, base_type)
+        @elems = elems
+        @base_type = base_type
+        @shape = elems.size
+        raise unless base_type.is_a?(Instance)
+      end
+
+      def base_type(genv)
+        @base_type
+      end
+
+      def check_match(genv, changes, vtx)
+        vtx.each_type do |other_ty|
+          if other_ty.is_a?(Vec)
+            if @elems.size == other_ty.elems.size
+              match = true
+              @elems.zip(other_ty.elems) do |elem, other_elem|
+                unless elem.check_match(genv, changes, other_elem)
+                  match = false
+                  break
+                end
+              end
+              return true if match
+            end
+          end
+        end
+        @base_type.check_match(genv, changes, vtx)
+      end
+
+      def show()
+        if @elems
+          "Vec[#{@elems.map { |e| Type.strip_parens(e.show) }.join(", ")}]#{@shape ? " size=#{@shape}" : ""}"
         else
           "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }] Debug"
         end

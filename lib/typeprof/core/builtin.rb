@@ -144,7 +144,7 @@ module TypeProf::Core
       if ty.is_a?(Type::Array) && a_args.block
         if ty.elems.nil? || ty.elems.empty?
           puts "check"
-          pp node
+          # pp node
           return true
         end
         # puts ty.show

@@ -244,7 +244,7 @@ module TypeProf::Core
         end
         CallNode.new(raw_node, lenv)
       else
-        pp raw_node
+        # pp raw_node
         raise "not supported yet: #{ raw_node.type }"
       end
     end
@@ -269,7 +269,7 @@ module TypeProf::Core
       when :call_target_node
         CallWriteNode.new(raw_node, dummy_node, lenv)
       else
-        pp raw_node
+        # pp raw_node
         raise "not supported yet: #{ raw_node.type }"
       end
     end
@@ -345,7 +345,7 @@ module TypeProf::Core
           break
         when :constant_path_node, :constant_path_target_node
           if raw_node.parent
-            # temporarily support old Prism https://bugs.ruby-lang.org/issues/20467
+            # temporarily suort old Prism https://bugs.ruby-lang.org/issues/20467
             names << (raw_node.respond_to?(:name) ? raw_node.name : raw_node.child.name)
             raw_node = raw_node.parent
           else
@@ -425,7 +425,7 @@ module TypeProf::Core
 
     def self.create_rbs_type(raw_decl, lenv)
       #suda: ここでrbsの型をもとにASTを生成
-      # Singleton型はどれだ
+      # suda: TODO: raw_decl.nameがPlus[...]のとき特殊な処理
       case raw_decl
       when RBS::Types::Bases::Nil
         SigTyBaseNilNode.new(raw_decl, lenv)
@@ -455,7 +455,13 @@ module TypeProf::Core
       when RBS::Types::ClassSingleton
         SigTySingletonNode.new(raw_decl, lenv)
       when RBS::Types::ClassInstance
-        SigTyInstanceNode.new(raw_decl, lenv)
+        if (raw_decl.name.name == :Plus)
+          # PlusNodeを作る
+          SigTyPlusNode.new(raw_decl, lenv)
+        else
+          SigTyInstanceNode.new(raw_decl, lenv)
+        end
+        # SigTyInstanceNode.new(raw_decl, lenv)
       when RBS::Types::Tuple
         SigTyTupleNode.new(raw_decl, lenv)
       when RBS::Types::Record
@@ -464,7 +470,7 @@ module TypeProf::Core
         SigTyInterfaceNode.new(raw_decl, lenv)
       when RBS::Types::Proc
         SigTyProcNode.new(raw_decl, lenv)
-      when RBS::Types::Variable
+      when RBS::Types::Variable # suda: 型変数
         SigTyVarNode.new(raw_decl, lenv)
       when RBS::Types::Optional
         SigTyOptionalNode.new(raw_decl, lenv)

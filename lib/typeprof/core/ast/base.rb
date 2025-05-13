@@ -53,7 +53,7 @@ module TypeProf::Core
         if @raw_node
           TypeProf::CodeRange.from_node(@raw_node)
         else
-          pp self
+          # pp self
           raise
         end
       end

@@ -219,6 +219,7 @@ module TypeProf::Core
     end
 
     class OperatorNode < CallBaseNode
+      # suda: なにこれ
       def initialize(raw_node, recv, lenv)
         mid = raw_node.binary_operator
         mid_code_range = TypeProf::CodeRange.from_node(raw_node.binary_operator_loc)

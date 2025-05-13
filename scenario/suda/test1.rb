@@ -17,14 +17,14 @@ end
 
 # 呼び出し元のコンテキストがなかったらどうする（symbolicな解析？）
 #: (Array[Integer, n:Integer]) -> Array[Integer] size=3|4
-def mymap1(array) # Array[n] -> Array[n]
+def mymap1(array) # Array[n] -> Array[Plus[1, 1]] "suda: これ"
   result = Array.new(array.size)
   array.each_with_index do |element, i|
     result[i] = yield(element)
   end
   result
 end
-# array = [1,2,3]
+# array = [1,2,3].mymap1
 
 def create_array(elem, n)
   result = [elem] * n
