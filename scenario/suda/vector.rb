@@ -3,9 +3,8 @@ module Vec[Elem, Size < Integer]
   def initialize: (Elem val, Size size) -> void
   def self.new2: [E, S] (E val, S size) -> Vec[E, S]
                 
-  def map: [U] () { (Elem arg0) -> U } -> Vec[U, Size]
+  def test: [U] () { (Elem arg0) -> U } -> Vec[U, Plus[Size, 1]]
   
-  # def concatenate: [U] (Vec[Elem, 1]) -> Plus[1, 1]
          
   def size: -> Size
 
@@ -13,21 +12,26 @@ module Vec[Elem, Size < Integer]
 end
 
 module Test
-  def initialize: () -> void
   def self.test: () -> Vec[Integer, Plus[1, 1]]
 end
 
 module Plus[L, R]
 end
+
+
 ## update: test.rb
+
+def test6()
+  Test.test()
+end
 
 # def foo()
 #   Vec.new2("foo", 2)
 # end
 
-# def foo2()
-#   Vec.new2("foo", 2).map() {|elem| elem}
-# end
+def foo2()
+  Vec.new2("foo", 2).test() {|elem| elem}
+end
 
 # def test0()
 #   Vec.f("foo")
@@ -51,8 +55,6 @@ end
 # end
 
 
-def test6()
-  Test.test()
-end
+
 
 ## diagnostics: test.rb

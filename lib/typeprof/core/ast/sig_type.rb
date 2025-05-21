@@ -730,7 +730,7 @@ module TypeProf::Core
         new_lit = all_types.map(&:value).sum
         new_arg = TypeProf::Core::Type::IntegerSingleton.new(genv, new_lit)
         p new_lit
-        changes.add_edge(genv, Source.new(Type::Instance.new(genv, mod, [new_arg])), vtx)
+        changes.add_edge(genv, Source.new(new_arg), vtx)
       end
 
       def contravariant_vertex0(genv, changes, vtx, subst)
