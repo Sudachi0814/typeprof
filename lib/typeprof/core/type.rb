@@ -192,9 +192,9 @@ module TypeProf::Core
         when [:NilClass] then "nil"
         when [:TrueClass] then "true"
         when [:FalseClass] then "false"
-        when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
+        when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? "" : ""}"
           #suda: TODO
-        when [:Vec] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? " size=#{@shape}" : ""}"
+        when [:Vec] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? "" : ""}"
         else
           "#{ @mod.show_cpath }#{ @args.empty? ? "" : "[#{ @args.map {|arg| Type.strip_parens(arg.show) }.join(", ") }]" }"
         end

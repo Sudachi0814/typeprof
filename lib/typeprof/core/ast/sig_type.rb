@@ -719,18 +719,28 @@ module TypeProf::Core
         return unless cpath
         mod = genv.resolve_cpath(cpath)
         args = @args.map {|arg| arg.covariant_vertex(genv, changes, subst) }
+        puts "args: #{args.inspect}"
         # suda: 要素に持つシングルトン型全てを格納（今は２個という制約はない）
-        all_types = []
-        args.each do |arg|
-          arg.each_type do |ty|
-            all_types << ty
-          end
+        # suda: TODO
+        unified_elem = Vertex.new(self) #elsemsを統一するVertex?空のVertexみたいなかんじ？
+        # args.each {|vtx| @changes.add_edge(genv, vtx, unified_elem) }
+        # ty = Type::Instance.new(genv, mod,[unified_elem])
+
+        left = []
+        args[0].each_type do |ty|
+          left << ty.value
         end
-        puts "argsの型リスト: #{all_types.inspect}"
-        new_lit = all_types.map(&:value).sum
-        new_arg = TypeProf::Core::Type::IntegerSingleton.new(genv, new_lit)
-        p new_lit
-        changes.add_edge(genv, Source.new(new_arg), vtx)
+        right = []
+        args[1].each_type do |ty|
+          right << ty.value
+        end
+
+        sums = left.product(right).map { |l, r| l + r }.uniq
+        
+        sums.each do |lit|
+          s = Source.new(TypeProf::Core::Type::IntegerSingleton.new(genv, lit))
+          changes.add_edge(genv, s, vtx)
+        end
       end
 
       def contravariant_vertex0(genv, changes, vtx, subst)
