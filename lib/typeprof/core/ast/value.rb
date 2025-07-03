@@ -5,11 +5,16 @@ module TypeProf::Core
       when :string_node
         AST.create_node(raw_part, lenv)
       when :embedded_statements_node
-        raw_part.statements ? AST.create_node(raw_part.statements, lenv) : DummyNilNode.new(TypeProf::CodeRange.from_node(raw_part), lenv)
+        if raw_part.statements
+          AST.create_node(raw_part.statements,
+                          lenv)
+        else
+          DummyNilNode.new(TypeProf::CodeRange.from_node(raw_part), lenv)
+        end
       when :embedded_variable_node
         AST.create_node(raw_part.variable, lenv)
       else
-        raise "unknown symbol part: #{ raw_part.type }"
+        raise "unknown symbol part: #{raw_part.type}"
       end
     end
 
@@ -30,7 +35,7 @@ module TypeProf::Core
       def attrs = { lit: }
 
       def install0(genv)
-        raise "not supported yet: #{ @lit.inspect }"
+        raise "not supported yet: #{@lit.inspect}"
       end
     end
 
@@ -234,8 +239,8 @@ module TypeProf::Core
     class ArrayNode < Node
       def initialize(raw_node, lenv, elems = raw_node.elements)
         super(raw_node, lenv)
-        @elems = elems.map {|n| AST.create_node(n, lenv) } # raw_nodeのelementsに対しcreate_nodeをmapしたものが入る
-        @splat = @elems.any? {|e| e.is_a?(SplatNode) } # splat演算子があるかどうか
+        @elems = elems.map { |n| AST.create_node(n, lenv) } # raw_nodeのelementsに対しcreate_nodeをmapしたものが入る
+        @splat = @elems.any? { |e| e.is_a?(SplatNode) } # splat演算子があるかどうか
       end
 
       attr_reader :elems, :splat
@@ -245,19 +250,45 @@ module TypeProf::Core
 
       # installはグローバル環境を受け取り、DFグラフのノードを初期化する
       def install0(genv)
-        elems = @elems.map {|e| e.install(genv).new_vertex(genv, self) }
-        unified_elem = Vertex.new(self) #elsemsを統一するVertex?空のVertexみたいなかんじ？
-        elems.each {|vtx| @changes.add_edge(genv, vtx, unified_elem) }
-        base_ty = genv.gen_ary_type0(unified_elem, elems.size) #instanceTypeを作って型を初期化してる（型をあわわすインスタンスを作る）
+        elems = @elems.map { |e| e.install(genv).new_vertex(genv, self) }
+        unified_elem = Vertex.new(self) # elsemsを統一するVertex?空のVertexみたいなかんじ？
+        elems.each { |vtx| @changes.add_edge(genv, vtx, unified_elem) }
+        base_ty = genv.gen_ary_type0(unified_elem, elems.size) # instanceTypeを作って型を初期化してる（型をあわわすインスタンスを作る）
         if @splat
-          Source.new(base_ty) #base_tyをもとにフローグラフのノードを作る
+          Source.new(base_ty) # base_tyをもとにフローグラフのノードを作る
         else
           Source.new(Type::Array.new(genv, elems, base_ty))
         end
       end
     end
 
-    #suda: TODO: VectorNode
+    class VectorNode < Node
+      def initialize(raw_node, lenv, elems = raw_node.elements)
+        super(raw_node, lenv)
+        @elems = elems.map { |n| AST.create_node(n, lenv) }
+        @splat = @elems.any? { |e| e.is_a?(SplatNode) }
+      end
+
+      attr_reader :elems, :splat
+
+      def subnodes = { elems: }
+      def attrs = { splat: }
+
+      def install0(genv)
+        elems = @elems.map { |e| e.install(genv).new_vertex(genv, self) }
+        unified_elem = Vertex.new(self)
+        elems.each { |vtx| @changes.add_edge(genv, vtx, unified_elem) }
+
+        size_ty = Type::IntegerSingleton.new(genv, elems.size)
+        base_ty = genv.gen_vec_type(unified_elem, size_ty)
+
+        if @splat
+          Source.new(base_ty)
+        else
+          Source.new(Type::Vec.new(genv, elems, base_ty))
+        end
+      end
+    end
 
     class HashNode < Node
       def initialize(raw_node, lenv, keywords)
@@ -278,7 +309,7 @@ module TypeProf::Core
             @vals << AST.create_node(raw_elem.value, lenv)
             @splat = true
           else
-            raise "unknown hash elem: #{ raw_elem.type }"
+            raise "unknown hash elem: #{raw_elem.type}"
           end
         end
       end

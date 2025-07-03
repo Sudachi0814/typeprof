@@ -6,7 +6,6 @@ module Vec[Elem, Size < Integer]
   def test: [U] () { (Elem arg0) -> U } -> Vec[U, Plus[Size, 1]]
   def test2: () -> Vec[Elem, Plus[Size, 1]]
   
-         
   def size: -> Size
 
   def self.f: (Elem val) -> Vec[Elem, Integer]
@@ -19,47 +18,34 @@ end
 module Plus[L, R]
 end
 
-
 ## update: test.rb
 
+# Vector型のリテラルテスト
+def test1()
+  [1, 2, 3]
+end
+
+def test2()
+  ["foo", "bar", "baz"]
+end
+
+def test3()
+  [1, "two", 3.0]
+end
+
+def test4()
+  vec = [1, 2, 3]
+  vec.test2()
+end
+
+def test5()
+  vec = ["foo", "bar", "baz"]
+  vec.test() {|elem| elem.length}
+end
+
 def test6()
-  Test.test()
+  vec = [1, 2, 3, 4, 5]
+  vec.size() 
 end
-
-def test7()
-  Vec.new2("foo", 3).test2()
-end
-
-# def foo()
-#   Vec.new2("foo", 2)
-# end
-
-def foo2()
-  Vec.new2("foo", 2).test() {|elem| elem}
-end
-
-# def test0()
-#   Vec.f("foo")
-# end
-
-# def test2()
-#   a = [1,2,3]
-#   a.map {|s| 42 }
-# end
-
-# def test3
-#   if true
-#     1 + 1
-#   else 
-#     "foo"
-#   end
-# end
-
-# def test4
-#   1 + 1
-# end
-
-
-
 
 ## diagnostics: test.rb

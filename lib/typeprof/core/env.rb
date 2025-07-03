@@ -41,20 +41,14 @@ module TypeProf::Core
       @run_count = 0
     end
 
-    attr_reader :type_table
+    attr_reader :type_table, :mod_class, :mod_object, :mod_ary, :mod_hash, :mod_range, :mod_str, :cls_type, :mod_type,
+                :obj_type, :nil_type, :true_type, :false_type, :str_type, :int_type, :float_type, :rational_type, :complex_type, :proc_type, :symbol_type, :set_type, :regexp_type
 
-    attr_reader :mod_class, :mod_object, :mod_ary, :mod_hash, :mod_range, :mod_str
-    attr_reader :cls_type, :mod_type
-    attr_reader :obj_type, :nil_type, :true_type, :false_type, :str_type
-    attr_reader :int_type, :float_type, :rational_type, :complex_type
-    attr_reader :proc_type, :symbol_type, :set_type, :regexp_type
-
-    def gen_integer_singleton_type()
+    def gen_integer_singleton_type
     end
 
     def gen_ary_type(elem_vtx)
-      ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
-      ty
+      Type::Instance.new(self, @mod_ary, [elem_vtx])
     end
 
     def gen_ary_type0(elem_vtx, shape)
@@ -63,12 +57,14 @@ module TypeProf::Core
       ty
     end
 
-    def gen_vec_type(elem_vtx, shape)
-      ty = Type::Instance.new(self, @mod_ary, [elem_vtx])
-      ty.shape = shape
-      ty
+    def gen_vec_type(elem_vtx, size_ty = nil)
+      if size_ty
+        size_vtx = Source.new(size_ty)
+        Type::Instance.new(self, @mod_vec, [elem_vtx, size_vtx])
+      else
+        Type::Instance.new(self, @mod_vec, [elem_vtx])
+      end
     end
-
 
     def gen_hash_type(key_vtx, val_vtx)
       Type::Instance.new(self, @mod_hash, [key_vtx, val_vtx])
@@ -109,20 +105,17 @@ module TypeProf::Core
 
     def get_superclass(singleton, mod)
       super_mod = mod.superclass
-      if super_mod
-        return [singleton, super_mod]
+      return [singleton, super_mod] if super_mod
+
+      if mod == @mod_basic_object
+        return [false, @mod_class] if singleton
+
+        nil
+
+      elsif mod == @mod_module && !singleton
+        nil
       else
-        if mod == @mod_basic_object
-          if singleton
-            return [false, @mod_class]
-          else
-            return nil
-          end
-        elsif mod == @mod_module && !singleton
-          return nil
-        else
-          return [false, @mod_module]
-        end
+        [false, @mod_module]
       end
     end
 
@@ -178,10 +171,10 @@ module TypeProf::Core
     end
 
     def add_run(obj)
-      unless @run_queue_set.include?(obj)
-        @run_queue << obj
-        @run_queue_set << obj
-      end
+      return if @run_queue_set.include?(obj)
+
+      @run_queue << obj
+      @run_queue_set << obj
     end
 
     # 全てのグラフに型を流す
@@ -211,6 +204,7 @@ module TypeProf::Core
     def resolve_cpath(cpath)
       mod = @mod_object
       raise unless cpath # annotation
+
       cpath.each do |cname|
         mod = mod.inner_modules[cname] ||= ModuleEntity.new(mod.cpath + [cname], mod)
       end
@@ -257,8 +251,8 @@ module TypeProf::Core
         AST.create_rbs_decl(raw_decl, lenv)
       end.compact
 
-      #suda: Vecwo
-      decls += AST.parse_rbs("typeprof-rbs-shim.rbs", <<-RBS)
+      # suda: Vecwo
+      decls += AST.parse_rbs('typeprof-rbs-shim.rbs', <<-RBS)
         class Exception
           include _Exception
         end
@@ -278,20 +272,20 @@ module TypeProf::Core
       # Loading frequently used modules first will reduces constant resolution
       # which makes loading faster :-)
       critical_modules = [
-        decls.find {|decl| decl.cpath == [:Object] },
-        decls.find {|decl| decl.cpath == [:Module] },
-        decls.find {|decl| decl.cpath == [:Numeric] },
-        decls.find {|decl| decl.cpath == [:Integer] },
-        decls.find {|decl| decl.cpath == [:String] },
-        decls.find {|decl| decl.cpath == [:Array] },
-        decls.find {|decl| decl.cpath == [:Hash] },
-        decls.find {|decl| decl.cpath == [:Enumerator] },
+        decls.find { |decl| decl.cpath == [:Object] },
+        decls.find { |decl| decl.cpath == [:Module] },
+        decls.find { |decl| decl.cpath == [:Numeric] },
+        decls.find { |decl| decl.cpath == [:Integer] },
+        decls.find { |decl| decl.cpath == [:String] },
+        decls.find { |decl| decl.cpath == [:Array] },
+        decls.find { |decl| decl.cpath == [:Hash] },
+        decls.find { |decl| decl.cpath == [:Enumerator] }
       ]
       decls = critical_modules + (decls - critical_modules)
 
-      decls.each {|decl| decl.define(self) }
+      decls.each { |decl| decl.define(self) }
       define_all
-      decls.each {|decl| decl.install(self) }
+      decls.each { |decl| decl.install(self) }
       run_all
     end
   end
@@ -319,7 +313,7 @@ module TypeProf::Core
     end
 
     def get_var(name)
-      @locals[name] || raise("#{ name }")
+      @locals[name] || raise("#{name}")
     end
 
     def exist_var?(name)
@@ -337,7 +331,6 @@ module TypeProf::Core
     def get_break_vtx
       @break_vtx ||= Vertex.new(:break_vtx)
     end
-
 
     def push_read_filter(name, type)
       (@filters[name] ||= []) << type
@@ -379,16 +372,16 @@ module TypeProf::Core
       case @scope_level
       when :instance
         mod = genv.resolve_cpath(@cpath || [])
-        type_params = mod.type_params.map {|ty_param| Source.new() } # TODO: better support
+        type_params = mod.type_params.map { |ty_param| Source.new } # TODO: better support
         ty = Type::Instance.new(genv, mod, type_params)
         Source.new(ty)
       when :class
         Source.new(Type::Singleton.new(genv, genv.resolve_cpath(@cpath || [])))
       else
-        Source.new()
+        Source.new
       end
     end
 
-    Toplevel = self.new([], :instance, nil, nil)
+    Toplevel = new([], :instance, nil, nil)
   end
 end

@@ -196,21 +196,21 @@ module TypeProf::Core
       when :float_node then FloatNode.new(raw_node, lenv)
       when :rational_node then RationalNode.new(raw_node, lenv)
       when :imaginary_node then ComplexNode.new(raw_node, lenv)
-      when :source_file_node then StringNode.new(raw_node, lenv, "")
-      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) #TODO:
+      when :source_file_node then StringNode.new(raw_node, lenv, '')
+      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) # TODO:
       when :source_encoding_node then SourceEncodingNode.new(raw_node, lenv)
       when :symbol_node then SymbolNode.new(raw_node, lenv)
       when :interpolated_symbol_node then InterpolatedSymbolNode.new(raw_node, lenv)
       when :string_node then StringNode.new(raw_node, lenv, raw_node.content)
       when :interpolated_string_node then InterpolatedStringNode.new(raw_node, lenv)
-      when :x_string_node then StringNode.new(raw_node, lenv, "")
+      when :x_string_node then StringNode.new(raw_node, lenv, '')
       when :interpolated_x_string_node then InterpolatedStringNode.new(raw_node, lenv)
       when :regular_expression_node then RegexpNode.new(raw_node, lenv)
       when :interpolated_regular_expression_node then InterpolatedRegexpNode.new(raw_node, lenv)
       when :match_last_line_node then MatchLastLineNode.new(raw_node, lenv)
       when :interpolated_match_last_line_node then InterpolatedMatchLastLineNode.new(raw_node, lenv)
       when :range_node then RangeNode.new(raw_node, lenv)
-      when :array_node then ArrayNode.new(raw_node, lenv)
+      when :array_node then VectorNode.new(raw_node, lenv)
       when :hash_node then HashNode.new(raw_node, lenv, false)
       when :keyword_hash_node then HashNode.new(raw_node, lenv, true)
       when :lambda_node then LambdaNode.new(raw_node, lenv)
@@ -231,7 +231,7 @@ module TypeProf::Core
       when :forwarding_super_node then ForwardingSuperNode.new(raw_node, lenv)
       when :yield_node then YieldNode.new(raw_node, lenv)
       when :call_node
-        if !raw_node.receiver
+        unless raw_node.receiver
           # TODO: handle them only when it is directly under class or module
           case raw_node.name
           when :include
@@ -245,7 +245,7 @@ module TypeProf::Core
         CallNode.new(raw_node, lenv)
       else
         # pp raw_node
-        raise "not supported yet: #{ raw_node.type }"
+        raise "not supported yet: #{raw_node.type}"
       end
     end
 
@@ -270,7 +270,7 @@ module TypeProf::Core
         CallWriteNode.new(raw_node, dummy_node, lenv)
       else
         # pp raw_node
-        raise "not supported yet: #{ raw_node.type }"
+        raise "not supported yet: #{raw_node.type}"
       end
     end
 
@@ -316,14 +316,14 @@ module TypeProf::Core
       when :float_node then FloatNode.new(raw_node, lenv)
       when :rational_node then RationalNode.new(raw_node, lenv)
       when :imaginary_node then ComplexNode.new(raw_node, lenv)
-      when :source_file_node then StringNode.new(raw_node, lenv, "")
-      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) #TODO:
+      when :source_file_node then StringNode.new(raw_node, lenv, '')
+      when :source_line_node then IntegerNode.new(raw_node, lenv, 0) # TODO:
       when :source_encoding_node then SourceEncodingNode.new(raw_node, lenv)
       when :symbol_node then SymbolNode.new(raw_node, lenv)
       when :interpolated_symbol_node then InterpolatedSymbolNode.new(raw_node, lenv)
       when :string_node then StringNode.new(raw_node, lenv, raw_node.content)
       when :interpolated_string_node then InterpolatedStringNode.new(raw_node, lenv)
-      when :x_string_node then StringNode.new(raw_node, lenv, "")
+      when :x_string_node then StringNode.new(raw_node, lenv, '')
       when :interpolated_x_string_node then InterpolatedStringNode.new(raw_node, lenv)
       when :regular_expression_node then RegexpNode.new(raw_node, lenv)
       when :interpolated_regular_expression_node then InterpolatedRegexpNode.new(raw_node, lenv)
@@ -332,7 +332,7 @@ module TypeProf::Core
       when :range_node then RangeNode.new(raw_node, lenv) # TODO: support range pattern correctly
 
       else
-        raise "unknown pattern node type: #{ raw_node.type }"
+        raise "unknown pattern node type: #{raw_node.type}"
       end
     end
 
@@ -344,27 +344,27 @@ module TypeProf::Core
           names << raw_node.name
           break
         when :constant_path_node, :constant_path_target_node
-          if raw_node.parent
-            # temporarily suort old Prism https://bugs.ruby-lang.org/issues/20467
-            names << (raw_node.respond_to?(:name) ? raw_node.name : raw_node.child.name)
-            raw_node = raw_node.parent
-          else
-            return names.reverse
-          end
+          return names.reverse unless raw_node.parent
+
+          # temporarily suort old Prism https://bugs.ruby-lang.org/issues/20467
+          names << (raw_node.respond_to?(:name) ? raw_node.name : raw_node.child.name)
+          raw_node = raw_node.parent
+
         when :self_node
           break if cref.scope_level == :class
+
           return nil
         else
           return nil
         end
       end
       cpath = cref.cpath # annotate
-      return cpath + names.reverse if cpath
+      cpath + names.reverse if cpath
     end
 
     def self.parse_rbs(path, src)
       _buffer, _directives, raw_decls = RBS::Parser.parse_signature(src)
-      #suda:RBSのパーサーを利用
+      # suda:RBSのパーサーを利用
 
       cref = CRef::Toplevel
       lenv = LocalEnv.new(path, cref, {}, [])
@@ -391,7 +391,7 @@ module TypeProf::Core
       when RBS::AST::Declarations::Global
         SigGlobalVariableNode.new(raw_decl, lenv)
       else
-        raise "unsupported: #{ raw_decl.class }"
+        raise "unsupported: #{raw_decl.class}"
       end
     end
 
@@ -413,9 +413,9 @@ module TypeProf::Core
       when RBS::AST::Members::AttrAccessor
         SigAttrAccessorNode.new(raw_decl, lenv)
       when RBS::AST::Declarations::Base
-        self.create_rbs_decl(raw_decl, lenv)
+        create_rbs_decl(raw_decl, lenv)
       else
-        raise "unsupported: #{ raw_decl.class }"
+        raise "unsupported: #{raw_decl.class}"
       end
     end
 
@@ -424,7 +424,7 @@ module TypeProf::Core
     end
 
     def self.create_rbs_type(raw_decl, lenv)
-      #suda: ここでrbsの型をもとにASTを生成
+      # suda: ここでrbsの型をもとにASTを生成
       # suda: TODO: raw_decl.nameがPlus[...]のとき特殊な処理
       case raw_decl
       when RBS::Types::Bases::Nil
@@ -455,7 +455,7 @@ module TypeProf::Core
       when RBS::Types::ClassSingleton
         SigTySingletonNode.new(raw_decl, lenv)
       when RBS::Types::ClassInstance
-        if (raw_decl.name.name == :Plus)
+        if raw_decl.name.name == :Plus
           # PlusNodeを作る
           SigTyPlusNode.new(raw_decl, lenv)
         else
@@ -477,7 +477,7 @@ module TypeProf::Core
       when RBS::Types::Literal
         SigTyLiteralNode.new(raw_decl, lenv)
       else
-        raise "unknown RBS type: #{ raw_decl.class }"
+        raise "unknown RBS type: #{raw_decl.class}"
       end
     end
   end

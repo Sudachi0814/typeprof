@@ -1,18 +1,17 @@
 module TypeProf::Core
   class Type
     # This new method does memoize creation of types
-    #: (GlobalEnv, *untyped) -> instance
     def self.new(genv, *args)
       genv.type_table[[self] + args] ||= super(genv, *args)
     end
 
     def self.strip_parens(s)
-      #s =~ /\A\((.*)\)\z/ ? $1 : s
-      s.start_with?("(") && s.end_with?(")") ? s[1..-2] || raise : s
+      # s =~ /\A\((.*)\)\z/ ? $1 : s
+      s.start_with?('(') && s.end_with?(')') ? s[1..-2] || raise : s
     end
 
     def self.strip_array(s)
-      s.start_with?("Array[") && s.end_with?("]") ? s[6..-2] || raise : s
+      s.start_with?('Array[') && s.end_with?(']') ? s[6..-2] || raise : s
     end
 
     def self.default_param_map(genv, ty)
@@ -22,14 +21,14 @@ module TypeProf::Core
       {
         "*self": Source.new(ty),
         "*instance": Source.new(instance_ty),
-        "*class": Source.new(singleton_ty),
+        "*class": Source.new(singleton_ty)
       }
     end
 
     class Singleton < Type
-      #: (GlobalEnv, ModuleEntity) -> void
       def initialize(genv, mod)
         raise unless mod.is_a?(ModuleEntity)
+
         # TODO: type_param
         @mod = mod
       end
@@ -51,6 +50,7 @@ module TypeProf::Core
               mod = @mod
               while mod
                 return true if mod == other_mod
+
                 changes.add_depended_superclass(mod)
                 mod = mod.superclass
               end
@@ -60,11 +60,11 @@ module TypeProf::Core
             return true if base_ty.check_match(genv, changes, Source.new(other_ty))
           end
         end
-        return false
+        false
       end
 
       def show
-        "singleton(#{ @mod.show_cpath })"
+        "singleton(#{@mod.show_cpath})"
       end
 
       def get_instance_type(genv)
@@ -76,10 +76,11 @@ module TypeProf::Core
     class IntegerSingleton < Type
       def initialize(genv, value)
         raise unless value.is_a?(Numeric)
+
         @value = value
       end
 
-       attr_reader :value
+      attr_reader :value
 
       def base_type(genv)
         case @value
@@ -95,7 +96,7 @@ module TypeProf::Core
           raise
         end
       end
-    
+
       def check_match(genv, changes, vtx)
         vtx.each_type do |other_ty|
           case other_ty
@@ -104,7 +105,7 @@ module TypeProf::Core
           when Instance
             ty = self
             base = ty.base_type(genv)
-            
+
             return true if base.check_match(genv, changes, Source.new(other_ty)) # vtxでいい？
           end
         end
@@ -117,9 +118,9 @@ module TypeProf::Core
     end
 
     class Instance < Type
-      #: (GlobalEnv, ModuleEntity, ::Array[Vertex]) -> void
       def initialize(genv, mod, args)
         raise mod.class.to_s unless mod.is_a?(ModuleEntity)
+
         @mod = mod
         @args = args
         @shape = [] # shapeを表すフィールド
@@ -151,15 +152,13 @@ module TypeProf::Core
               end
               changes.add_depended_superclass(ty.mod)
 
-              if other_ty.mod.module?
-                return true if check_match_included_modules(genv, changes, ty, other_ty)
-              end
+              return true if other_ty.mod.module? && check_match_included_modules(genv, changes, ty, other_ty)
 
               ty = genv.get_superclass_type(ty, changes, {})
             end
           end
         end
-        return false
+        false
       end
 
       def check_match_included_modules(genv, changes, ty, other_ty)
@@ -167,7 +166,7 @@ module TypeProf::Core
           if inc_decl.is_a?(AST::SigIncludeNode) && inc_mod.type_params
             inc_ty = genv.get_instance_type(inc_mod, inc_decl.args, changes, {}, ty)
           else
-            type_params = inc_mod.type_params.map {|ty_param| Source.new() } # TODO: better support
+            type_params = inc_mod.type_params.map { |ty_param| Source.new } # TODO: better support
             inc_ty = Type::Instance.new(genv, inc_mod, type_params)
           end
           if inc_ty.mod == other_ty.mod
@@ -184,25 +183,41 @@ module TypeProf::Core
 
           return true if check_match_included_modules(genv, changes, inc_ty, other_ty)
         end
-        return false
+        false
       end
 
       def show
         case @mod.cpath
-        when [:NilClass] then "nil"
-        when [:TrueClass] then "true"
-        when [:FalseClass] then "false"
-        when [:Array] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? "" : ""}"
-          #suda: TODO
-        when [:Vec] then "#{@mod.show_cpath}#{@args.empty? ? "" : "[#{@args.map { |arg| Type.strip_parens(arg.show) }.join(", ")}]"}#{@shape ? "" : ""}"
+        when [:NilClass] then 'nil'
+        when [:TrueClass] then 'true'
+        when [:FalseClass] then 'false'
+        when [:Array] then "#{@mod.show_cpath}#{if @args.empty?
+                                                  ''
+                                                else
+                                                  "[#{@args.map do |arg|
+                                                    Type.strip_parens(arg.show)
+                                                  end.join(', ')}]"
+                                                end}#{@shape ? '' : ''}"
+        when [:Vec] then "#{@mod.show_cpath}#{if @args.empty?
+                                                ''
+                                              else
+                                                "[#{@args.map do |arg|
+                                                  Type.strip_parens(arg.show)
+                                                end.join(', ')}]"
+                                              end}"
         else
-          "#{ @mod.show_cpath }#{ @args.empty? ? "" : "[#{ @args.map {|arg| Type.strip_parens(arg.show) }.join(", ") }]" }"
+          "#{@mod.show_cpath}#{if @args.empty?
+                                 ''
+                               else
+                                 "[#{@args.map do |arg|
+                                   Type.strip_parens(arg.show)
+                                 end.join(', ')}]"
+                               end}"
         end
       end
     end
 
     class Array < Type
-      #: (GlobalEnv, ::Array[Vertex], Instance) -> void
       def initialize(genv, elems, base_type)
         @elems = elems
         @base_type = base_type
@@ -231,6 +246,7 @@ module TypeProf::Core
               edges << [elem, lefts[i]]
             else
               break unless rest_elem
+
               state = :rest
               redo
             end
@@ -255,27 +271,25 @@ module TypeProf::Core
 
       def check_match(genv, changes, vtx)
         vtx.each_type do |other_ty|
-          if other_ty.is_a?(Array)
-            if @elems.size == other_ty.elems.size
-              match = true
-              @elems.zip(other_ty.elems) do |elem, other_elem|
-                unless elem.check_match(genv, changes, other_elem)
-                  match = false
-                  break
-                end
-              end
-              return true if match
+          next unless other_ty.is_a?(Array) && @elems.size == (other_ty.elems.size)
+
+          match = true
+          @elems.zip(other_ty.elems) do |elem, other_elem|
+            unless elem.check_match(genv, changes, other_elem)
+              match = false
+              break
             end
           end
+          return true if match
         end
         @base_type.check_match(genv, changes, vtx)
       end
 
       def show
         if @elems
-          "[#{@elems.map { |e| Type.strip_parens(e.show) }.join(", ")}]#{@shape ? " size=#{@shape}" : ""}"
+          "[#{@elems.map { |e| Type.strip_parens(e.show) }.join(', ')}]#{@shape ? " size=#{@shape}" : ''}"
         else
-          "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }] Debug"
+          "#{@base_type.mod.show_cpath}[#{Type.strip_parens(@unified_elem.show)}] Debug"
         end
       end
     end
@@ -284,8 +298,17 @@ module TypeProf::Core
       def initialize(genv, elems, base_type)
         @elems = elems
         @base_type = base_type
-        @shape = elems.size
         raise unless base_type.is_a?(Instance)
+      end
+
+      attr_reader :elems
+
+      def get_elem(genv, idx = nil)
+        if idx && @elems
+          @elems[idx] || Source.new(genv.nil_type)
+        else
+          @base_type.args.first
+        end
       end
 
       def base_type(genv)
@@ -294,33 +317,44 @@ module TypeProf::Core
 
       def check_match(genv, changes, vtx)
         vtx.each_type do |other_ty|
-          if other_ty.is_a?(Vec)
-            if @elems.size == other_ty.elems.size
-              match = true
-              @elems.zip(other_ty.elems) do |elem, other_elem|
-                unless elem.check_match(genv, changes, other_elem)
-                  match = false
-                  break
-                end
+          # Vec型のリテラル同士のマッチング
+          if other_ty.is_a?(Vec) && @elems.size == (other_ty.elems.size)
+            match = true
+            @elems.zip(other_ty.elems) do |elem, other_elem|
+              unless elem.check_match(genv, changes, other_elem)
+                match = false
+                break
               end
-              return true if match
             end
+            return true if match
+          end
+
+          # Vec型のリテラルとVec型のインスタンスのマッチング
+          next unless other_ty.is_a?(Type::Instance) && other_ty.mod == genv.mod_vec
+          # 型引数のサイズが一致する場合
+          next unless other_ty.args.size >= 2
+
+          size_arg = other_ty.args[1]
+          size_arg.each_type do |size_ty|
+            return true if size_ty.is_a?(Type::IntegerSingleton) && size_ty.value == @elems.size
           end
         end
         @base_type.check_match(genv, changes, vtx)
       end
 
-      def show()
+      # : -> String
+      def show
         if @elems
-          "Vec[#{@elems.map { |e| Type.strip_parens(e.show) }.join(", ")}]#{@shape ? " size=#{@shape}" : ""}"
+          "VecLiteral[#{@elems.map { |e| Type.strip_parens(e.show) }.join(', ')}]"
         else
-          "#{ @base_type.mod.show_cpath }[#{ Type.strip_parens(@unified_elem.show) }] Debug"
+          "#{@base_type.mod.show_cpath}[#{Type.strip_parens(@unified_elem.show)}] Debug"
         end
       end
     end
 
     class Hash < Type
-      #: (GlobalEnv, ::Array[Vertex], Instance) -> void
+      # : (GlobalEnv, ::Array[Vertex], Instance) -> void
+      # : (untyped, untyped, untyped) -> nil
       def initialize(genv, literal_pairs, base_type)
         @literal_pairs = literal_pairs
         @base_type = base_type
@@ -365,12 +399,12 @@ module TypeProf::Core
       end
 
       def show
-        "<Proc>"
+        '<Proc>'
       end
     end
 
     class Symbol < Type
-      #: (GlobalEnv, ::Symbol) -> void
+      # : (GlobalEnv, ::Symbol) -> void
       def initialize(genv, sym)
         @sym = sym
       end
@@ -390,7 +424,7 @@ module TypeProf::Core
             return true if genv.symbol_type.check_match(genv, changes, Source.new(other_ty))
           end
         end
-        return false
+        false
       end
 
       def show
@@ -407,16 +441,16 @@ module TypeProf::Core
       end
 
       def check_match(genv, changes, vtx)
-        return true
+        true
       end
 
       def show
-        "bot"
+        'bot'
       end
     end
 
     class Var < Type
-      #: (GlobalEnv, ::Symbol, Vertex) -> void
+      # : (GlobalEnv, ::Symbol, Vertex) -> void
       def initialize(genv, name, vtx)
         @name = name
         @vtx = vtx
@@ -433,7 +467,7 @@ module TypeProf::Core
       end
 
       def show
-        "var[#{ @name }]"
+        "var[#{@name}]"
       end
     end
   end
