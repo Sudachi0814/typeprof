@@ -1,6 +1,7 @@
 ## update: test.rbs
 module Vec[Elem, Size < Integer]
-  def initialize: (Elem val, Size size) -> void
+  def initialize: (Size size, Elem val) -> void
+
   def self.new2: [E, S] (E val, S size) -> Vec[E, S]
                 
   def test: [U] () { (Elem arg0) -> U } -> Vec[U, Plus[Size, 1]]
@@ -25,9 +26,9 @@ def test1()
   [1, 2, 3]
 end
 
-def test2()
-  ["foo", "bar", "baz"]
-end
+# def test2()
+#   ["foo", "bar", "baz"]
+# end
 
 def test3()
   [1, "two", 3.0]
@@ -48,11 +49,14 @@ def test6()
   vec.size() 
 end
 
-# suda: 目標:2にしたらエラーになる
-#: [Size < Integer] (Size size) -> Vec[Integer, Plus[Size, 1]]
-def test7(n)
-  Array.new(3, n).test2()
-  # returnの型は？
+
+
+def test8
+  Array.new(3, "foo")
+end
+
+def test9
+  Vec.new(3, "foo")
 end
 
 ## diagnostics: test.rb

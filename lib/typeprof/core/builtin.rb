@@ -6,9 +6,10 @@ module TypeProf::Core
       @genv = genv
     end
 
-    #suda: TODO: newでイニシャライズした時に型変数とマッチした値で初期化するような処理をまだやっていない。.newは返り値の型がRBSにはない！！
+    # suda: TODO: newでイニシャライズした時に型変数とマッチした値で初期化するような処理をまだやっていない。.newは返り値の型がRBSにはない！！
 
     def class_new(changes, node, ty, a_args, ret)
+      puts 'class_new'
       if ty.is_a?(Type::Singleton)
         ty = ty.get_instance_type(@genv)
         recv = Source.new(ty)
@@ -16,6 +17,46 @@ module TypeProf::Core
         changes.add_edge(@genv, Source.new(ty), ret)
       end
       true
+    end
+
+    def vec_new(changes, node, ty, a_args, ret)
+      puts 'vec_new'
+      class_new(changes, node, ty, a_args, ret)
+    end
+
+    def array_new(changes, node, ty, a_args, ret)
+      puts 'array_new'
+      if ty.is_a?(Type::Singleton) && ty.mod == @genv.mod_ary
+        # Array.newの場合の特別な処理
+        if a_args.positionals.size == 1
+          # Array.new(size)の場合
+          size_arg = a_args.positionals[0]
+          if size_arg.is_a?(AST::IntegerNode)
+            # サイズが定数の場合、Vec型を生成
+            size_ty = Type::IntegerSingleton.new(@genv, size_arg.lit)
+            elem_vtx = Vertex.new(node)
+            vec_ty = @genv.gen_vec_type(elem_vtx, size_ty)
+            changes.add_edge(@genv, Source.new(vec_ty), ret)
+            return true
+          end
+        elsif a_args.positionals.size == 2
+          # Array.new(size, default)の場合
+          size_arg = a_args.positionals[0]
+          default_arg = a_args.positionals[1]
+          puts 'array_new-vec生成'
+          puts size_arg.types
+          size_ty = Type::IntegerSingleton.new(@genv, size_arg.lit)
+          vec_ty = @genv.gen_vec_type(default_arg, size_ty)
+          changes.add_edge(@genv, Source.new(vec_ty), ret)
+          return true
+        end
+
+        # Array.newの特別処理が適用されない場合、通常のclass_new処理
+        class_new(changes, node, ty, a_args, ret)
+      else
+        # Array以外のクラスの場合、通常のclass_new処理
+        class_new(changes, node, ty, a_args, ret)
+      end
     end
 
     def object_class(changes, node, ty, a_args, ret)
@@ -43,11 +84,11 @@ module TypeProf::Core
         case ty
         when Type::Array
           idx = node.positional_args[0]
-          if idx.is_a?(AST::IntegerNode)
-            idx = idx.lit
-          else
-            idx = nil
-          end
+          idx = if idx.is_a?(AST::IntegerNode)
+                  idx.lit
+                else
+                  nil
+                end
           vtx = ty.get_elem(@genv, idx)
           changes.add_edge(@genv, vtx, ret)
           true
@@ -143,14 +184,14 @@ module TypeProf::Core
     def array_collect(changes, node, ty, a_args, ret)
       if ty.is_a?(Type::Array) && a_args.block
         if ty.elems.nil? || ty.elems.empty?
-          puts "check"
+          puts 'check'
           # pp node
           return true
         end
         # puts ty.show
         new_vertex = Vertex.new(node)
-        a_args.block.each_type do | block_type |
-          if (block_type.is_a?(Type::Proc))
+        a_args.block.each_type do |block_type|
+          if block_type.is_a?(Type::Proc)
             block_type.block.accept_args(@genv, changes, [ty.get_elem(@genv)], new_vertex, false)
           end
         end
@@ -163,10 +204,8 @@ module TypeProf::Core
         new_vertex = Vertex.new(node)
         # puts ty.args
         # puts ty.show
-        a_args.block.each_type do | block_type |
-          if (block_type.is_a?(Type::Proc))
-            block_type.block.accept_args(@genv, changes, ty.args, new_vertex, false)
-          end
+        a_args.block.each_type do |block_type|
+          block_type.block.accept_args(@genv, changes, ty.args, new_vertex, false) if block_type.is_a?(Type::Proc)
         end
         base_ty = @genv.gen_ary_type0(new_vertex, ty.shape)
         ret_vertex = Source.new(base_ty)
@@ -179,7 +218,9 @@ module TypeProf::Core
 
     def deploy
       {
-        #TODO:Array.newはクラスメソッド
+        # TODO: Array.newはクラスメソッド
+        vec_new: [[:Vec], true, :new],
+        array_new: [[:Array], true, :new],
         class_new: [[:Class], false, :new],
         object_class: [[:Object], false, :class],
         proc_call: [[:Proc], false, :call],
@@ -188,7 +229,7 @@ module TypeProf::Core
         array_push: [[:Array], false, :<<],
         # array_collect:   [[:Array], false, :collect],
         hash_aref: [[:Hash], false, :[]],
-        hash_aset: [[:Hash], false, :[]=],
+        hash_aset: [[:Hash], false, :[]=]
       }.each do |key, (cpath, singleton, mid)|
         me = @genv.resolve_method(cpath, singleton, mid)
         me.builtin = method(key)
