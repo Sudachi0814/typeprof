@@ -48,4 +48,11 @@ def test6()
   vec.size() 
 end
 
+# suda: 目標:2にしたらエラーになる
+#: [Size < Integer] (Size size) -> Vec[Integer, Plus[Size, 1]]
+def test7(n)
+  Array.new(3, n).test2()
+  # returnの型は？
+end
+
 ## diagnostics: test.rb
