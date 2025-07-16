@@ -91,11 +91,44 @@ module TypeProf::Core
             changes.add_edge(@genv, Source.new(vec_ty), ret)
             return true
           else
-            # 変数や他の型の場合、Var型を使用してサイズを表現
-            size_ty = Type::Var.new(@genv, :n, size_arg)
-            vec_ty = @genv.gen_vec_type(default_arg, size_ty)
-            changes.add_edge(@genv, Source.new(vec_ty), ret)
-            return true
+            # 変数や他の型の場合、型チェックを行う
+            allowed_type = false
+            size_arg.each_type do |size_ty|
+              case size_ty
+              when Type::Instance
+                # Integer型の場合
+                if size_ty.mod.cpath == [:Integer]
+                  allowed_type = true
+                  break
+                end
+              when Type::Var
+                # Var型の場合
+                allowed_type = true
+                break
+              when Type::IntegerSingleton
+                # IntegerSingleton型の場合（既に上で処理済み）
+                allowed_type = true
+                break
+              end
+            end
+            
+            # untypedの場合も許可
+            if size_arg.types.empty?
+              allowed_type = true
+            end
+            
+            if allowed_type
+              # 許可された型の場合、Var型を使用してサイズを表現
+              size_ty = Type::Var.new(@genv, :n, size_arg)
+              vec_ty = @genv.gen_vec_type(default_arg, size_ty)
+              changes.add_edge(@genv, Source.new(vec_ty), ret)
+              return true
+            else
+              # 許可されていない型の場合、エラーを発生させる
+              meth = node.mid_code_range ? :mid_code_range : :code_range
+              changes.add_diagnostic(meth, "Invalid argument type for Size")
+              return true
+            end
           end
         end
 
