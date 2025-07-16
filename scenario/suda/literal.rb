@@ -26,9 +26,6 @@ def test1()
   [1, 2, 3]
 end
 
-# def test2()
-#   ["foo", "bar", "baz"]
-# end
 
 def test3()
   [1, "two", 3.0]
@@ -49,14 +46,17 @@ def test6()
   vec.size() 
 end
 
-
-
-def test8
-  Array.new(3, "foo")
+def test7(n)
+  Vec.new(n, "foo")
 end
 
-def test9
-  Vec.new(3, "foo")
+# # suda: 目標:2にしたらエラーになる
+#: [Size < Integer] (Size size) -> Vec[Integer, Plus[Size, 1]]
+def test8(n)
+  Array.new(n, 3)
+  # returnの型は？
 end
+
+
 
 ## diagnostics: test.rb

@@ -41,7 +41,7 @@ module TypeProf::Core
       @run_count = 0
     end
 
-    attr_reader :type_table, :mod_class, :mod_object, :mod_ary, :mod_hash, :mod_range, :mod_str, :cls_type, :mod_type,
+    attr_reader :type_table, :mod_class, :mod_object, :mod_ary, :mod_vec, :mod_hash, :mod_range, :mod_str, :cls_type, :mod_type,
                 :obj_type, :nil_type, :true_type, :false_type, :str_type, :int_type, :float_type, :rational_type, :complex_type, :proc_type, :symbol_type, :set_type, :regexp_type
 
     def gen_integer_singleton_type

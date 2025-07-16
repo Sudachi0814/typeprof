@@ -45,10 +45,22 @@ module TypeProf::Core
           default_arg = a_args.positionals[1]
           puts 'array_new-vec生成'
           puts size_arg.types
-          size_ty = Type::IntegerSingleton.new(@genv, size_arg.lit)
-          vec_ty = @genv.gen_vec_type(default_arg, size_ty)
-          changes.add_edge(@genv, Source.new(vec_ty), ret)
-          return true
+          
+          # size_argから整数値を取得
+          size_value = nil
+          size_arg.each_type do |size_ty|
+            if size_ty.is_a?(Type::IntegerSingleton)
+              size_value = size_ty.value
+              break
+            end
+          end
+          
+          if size_value
+            size_ty = Type::IntegerSingleton.new(@genv, size_value)
+            vec_ty = @genv.gen_vec_type(default_arg, size_ty)
+            changes.add_edge(@genv, Source.new(vec_ty), ret)
+            return true
+          end
         end
 
         # Array.newの特別処理が適用されない場合、通常のclass_new処理
