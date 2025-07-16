@@ -58,18 +58,34 @@ def test8()
   Array.new(3, "foo")
 end
 
-def test9()
-  Array.new("foo", "foo")
-end
-
-# #: [Size < Integer] (Size size) -> Array[Object]
-# def test10(n)
-#   Array.new(n, "foo")
+# def test9()
+#   Array.new("foo", "foo")
 # end
+
+
+#: [Size < Integer] (Size size) -> Vec[String, String]
+def test10(n)
+  Array.new(n, "foo")
+end
 
 def test10(n)
   Array.new(n, "foo")
 end
 
+# これはTypeCheckされない？
+#: String -> String
+def test11(n)
+  3
+end
+
+# #: [Size < Integer] (Size size) -> Vec[String, Plus[Size, 1]]
+# def test12(n)
+#   Array.new(n+1, "foo")
+# end
+
+# これはTypeCheckされない？
+#: Vec[String, String] -> 
+def test13(n)
+end
 
 ## diagnostics: test.rb

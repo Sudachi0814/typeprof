@@ -22,14 +22,11 @@ module TypeProf::Core
     def vec_new(changes, node, ty, a_args, ret)
       puts 'vec_new'
       if ty.is_a?(Type::Singleton) && ty.mod == @genv.mod_vec
-        # Vec.newの場合の特別な処理
         if a_args.positionals.size == 2
-          # Vec.new(size, val)の場合
           size_arg = a_args.positionals[0]
           val_arg = a_args.positionals[1]
           puts 'vec_new-vec生成'
           
-          # size_argから整数値を取得
           size_value = nil
           size_arg.each_type do |size_ty|
             if size_ty.is_a?(Type::IntegerSingleton)
@@ -46,23 +43,19 @@ module TypeProf::Core
           end
         end
 
-        # Vec.newの特別処理が適用されない場合、通常のclass_new処理
         class_new(changes, node, ty, a_args, ret)
       else
-        # Vec以外のクラスの場合、通常のclass_new処理
         class_new(changes, node, ty, a_args, ret)
       end
     end
 
+    
     def array_new(changes, node, ty, a_args, ret)
       puts 'array_new'
       if ty.is_a?(Type::Singleton) && ty.mod == @genv.mod_ary
-        # Array.newの場合の特別な処理
         if a_args.positionals.size == 1
-          # Array.new(size)の場合
           size_arg = a_args.positionals[0]
           if size_arg.is_a?(AST::IntegerNode)
-            # サイズが定数の場合、Vec型を生成
             size_ty = Type::IntegerSingleton.new(@genv, size_arg.lit)
             elem_vtx = Vertex.new(node)
             vec_ty = @genv.gen_vec_type(elem_vtx, size_ty)
@@ -70,11 +63,9 @@ module TypeProf::Core
             return true
           end
         elsif a_args.positionals.size == 2
-          # Array.new(size, default)の場合
           size_arg = a_args.positionals[0]
           default_arg = a_args.positionals[1]
           
-          # size_argから整数値を取得（定数の場合）
           size_value = nil
           size_arg.each_type do |size_ty|
             if size_ty.is_a?(Type::IntegerSingleton)
@@ -84,58 +75,52 @@ module TypeProf::Core
           end
           
           puts size_value
+
+          # IntegerSingletonnoのとき
           if size_value
-            # 定数の場合
             size_ty = Type::IntegerSingleton.new(@genv, size_value)
             vec_ty = @genv.gen_vec_type(default_arg, size_ty)
             changes.add_edge(@genv, Source.new(vec_ty), ret)
             return true
           else
-            # 変数や他の型の場合、型チェックを行う
+            # それいがいは型チェック
+            # todo: elifで実装する
             allowed_type = false
             size_arg.each_type do |size_ty|
               case size_ty
               when Type::Instance
-                # Integer型の場合
                 if size_ty.mod.cpath == [:Integer]
                   allowed_type = true
                   break
                 end
               when Type::Var
-                # Var型の場合
                 allowed_type = true
                 break
               when Type::IntegerSingleton
-                # IntegerSingleton型の場合（既に上で処理済み）
                 allowed_type = true
                 break
               end
             end
             
-            # untypedの場合も許可
             if size_arg.types.empty?
               allowed_type = true
             end
             
             if allowed_type
-              # 許可された型の場合、Var型を使用してサイズを表現
               size_ty = Type::Var.new(@genv, :n, size_arg)
               vec_ty = @genv.gen_vec_type(default_arg, size_ty)
               changes.add_edge(@genv, Source.new(vec_ty), ret)
               return true
             else
-              # 許可されていない型の場合、エラーを発生させる
+              # VarもしくはIntegerSingletonのスーパータイプでない
               meth = node.mid_code_range ? :mid_code_range : :code_range
               changes.add_diagnostic(meth, "Invalid argument type for Size")
               return true
             end
           end
         end
-
-        # Array.newの特別処理が適用されない場合、通常のclass_new処理
         class_new(changes, node, ty, a_args, ret)
       else
-        # Array以外のクラスの場合、通常のclass_new処理
         class_new(changes, node, ty, a_args, ret)
       end
     end
