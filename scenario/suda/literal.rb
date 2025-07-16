@@ -54,12 +54,22 @@ end
 #   # returnの型は？
 # end
 
-def test8
+def test8()
   Array.new(3, "foo")
 end
 
-def test9
-  Vec.new(3, "foo")
+def test9()
+  Array.new("foo", "foo")
 end
+
+# #: [Size < Integer] (Size size) -> Array[Object]
+# def test10(n)
+#   Array.new(n, "foo")
+# end
+
+def test10(n)
+  Array.new(n, "foo")
+end
+
 
 ## diagnostics: test.rb

@@ -73,10 +73,8 @@ module TypeProf::Core
           # Array.new(size, default)の場合
           size_arg = a_args.positionals[0]
           default_arg = a_args.positionals[1]
-          puts 'array_new-vec生成'
-          puts size_arg.types
           
-          # size_argから整数値を取得
+          # size_argから整数値を取得（定数の場合）
           size_value = nil
           size_arg.each_type do |size_ty|
             if size_ty.is_a?(Type::IntegerSingleton)
@@ -85,8 +83,16 @@ module TypeProf::Core
             end
           end
           
+          puts size_value
           if size_value
+            # 定数の場合
             size_ty = Type::IntegerSingleton.new(@genv, size_value)
+            vec_ty = @genv.gen_vec_type(default_arg, size_ty)
+            changes.add_edge(@genv, Source.new(vec_ty), ret)
+            return true
+          else
+            # 変数や他の型の場合、Var型を使用してサイズを表現
+            size_ty = Type::Var.new(@genv, :n, size_arg)
             vec_ty = @genv.gen_vec_type(default_arg, size_ty)
             changes.add_edge(@genv, Source.new(vec_ty), ret)
             return true
