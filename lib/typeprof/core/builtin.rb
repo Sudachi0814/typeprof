@@ -21,7 +21,37 @@ module TypeProf::Core
 
     def vec_new(changes, node, ty, a_args, ret)
       puts 'vec_new'
-      class_new(changes, node, ty, a_args, ret)
+      if ty.is_a?(Type::Singleton) && ty.mod == @genv.mod_vec
+        # Vec.newの場合の特別な処理
+        if a_args.positionals.size == 2
+          # Vec.new(size, val)の場合
+          size_arg = a_args.positionals[0]
+          val_arg = a_args.positionals[1]
+          puts 'vec_new-vec生成'
+          
+          # size_argから整数値を取得
+          size_value = nil
+          size_arg.each_type do |size_ty|
+            if size_ty.is_a?(Type::IntegerSingleton)
+              size_value = size_ty.value
+              break
+            end
+          end
+          
+          if size_value
+            size_ty = Type::IntegerSingleton.new(@genv, size_value)
+            vec_ty = @genv.gen_vec_type(val_arg, size_ty)
+            changes.add_edge(@genv, Source.new(vec_ty), ret)
+            return true
+          end
+        end
+
+        # Vec.newの特別処理が適用されない場合、通常のclass_new処理
+        class_new(changes, node, ty, a_args, ret)
+      else
+        # Vec以外のクラスの場合、通常のclass_new処理
+        class_new(changes, node, ty, a_args, ret)
+      end
     end
 
     def array_new(changes, node, ty, a_args, ret)
